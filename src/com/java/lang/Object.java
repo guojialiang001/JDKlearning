@@ -245,7 +245,7 @@ public class Object {
      *
      *       * @return     a clone of this instance. 一个克隆的实例
      *       * @throws  CloneNotSupportedException
-     *       如果对象的classn不支持{@code Cloneable}接口，子类重写{@code clone}可能也抛出错误表明一个实例不能被克隆。
+     *       如果对象的class不支持{@code Cloneable}接口，子类重写{@code clone}可能也抛出错误表明一个实例不能被克隆。
      *
      */
 
