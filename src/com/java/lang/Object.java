@@ -219,9 +219,6 @@ public class Object {
 
 
     /**
-     * * Creates and returns a copy of this object.  The precise meaning
-     *      * of "copy" may depend on the class of the object. The general
-     *      * intent is that, for any object {@code x}, the expression:
      *      创建和返回一个对象的拷贝。“复制”的确切含义可能取决于对象的类别。
      *      总体的意图。对于任何对象 {@code x}表达式
      *      x.clone() != x
@@ -233,7 +230,6 @@ public class Object {
      *      而通常情况下
      *      x.clone().equals(x)也会变成TRUE，
      *      这个类和他的所有超类（除了{@code Object}）遵守这个公约，他会变成是{@code x.clone().getClass() == x.getClass()}
-     *
      *      按照约定，这个方法返回的对象应该是独立的（正在被克隆的对象）。为了实现它的独立性，
      *      对象在返回之前,它可能有必要去修改一个对象字段或者更多的对象字段，由{@code super.clone}返回。
      *      典型的，也就是说，复制任何易变的对象，来组成正在被克隆并且代替引用这些对象和引用这些复制的对象内部的“深层次结构”
@@ -242,17 +238,15 @@ public class Object {
      *       对于{@code Object}类的{@code clone} 方法 执行了一个克隆操作。
      *       首先，如果这个对象的类没有实现{@code Cloneable}接口,然后一个{@code CloneNotSupportedException} 被抛出，
      *       提示所有的数组都被认为实现了{@code Cloneable}接口并且数组类型{@code T[]}的{@code clone}方法的返回类型是{@code T[]}，                                                                1`
-     *          {@code T[]}T的位置是任何引用或原始类型
-     *          否则。这个方法就会创建一个新的的OBJECT的CLASS的实例并且初始化所有与此对象对应字段的内容完全相同的字段。
+     *       {@code T[]}T的位置是任何引用或原始类型
+     *       否则。这个方法就会创建一个新的的OBJECT的CLASS的实例并且初始化所有与此对象对应字段的内容完全相同的字段。
+     *        像是被指派的，字段的内容本身不是克隆的。因此。这个方法表现了一个对象的“浅复制”,不是一个“深复制”操作。
+     *       这个{@code Object}本身不实现接口{@code Cloneable},所以调用这个 {@code clone}方法在类为{@code object}的对象上，将导致出现引发运行时异常
      *
-
-     *      * is {@code T[]} where T is any reference or primitive type.
-     *      * Otherwise, this method creates a new instance of the class of this
-     *      * object and initializes all its fields with exactly the contents of
-     *      * the corresponding fields of this object, as if by assignment; the
-     *      * contents of the fields are not themselves cloned. Thus, this method
-     *      * performs a "shallow copy" of this object, not a "deep copy" operation.
-
+     *       * @return     a clone of this instance. 一个克隆的实例
+     *       * @throws  CloneNotSupportedException
+     *       如果对象的classn不支持{@code Cloneable}接口，子类重写{@code clone}可能也抛出错误表明一个实例不能被克隆。
+     *
      */
 
 
