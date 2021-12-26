@@ -350,6 +350,28 @@ public class Object {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
     }
 
+
+
+
+    /**
+     *
+     *唤醒正在该对象监视器上等待的单个线程.
+     * 如果任何线程正在等待这个对象，他们的其中一个会被选中被唤醒
+     * Wakes up a single thread that is waiting on this object's
+     * monitor. If any threads are waiting on this object, one of them
+     * is chosen to be awakened. The choice is arbitrary and occurs at
+     * the discretion of the implementation. A thread waits on an object's
+     * monitor by calling one of the {@code wait} methods.
+     * <p>
+     * The awakened thread will not be able to proceed until the current
+     * thread relinquishes the lock on this object. The awakened thread will
+     * compete in the usual manner with any other threads that might be
+     * actively competing to synchronize on this object; for example, the
+     * awakened thread enjoys no reliable privilege or disadvantage in being
+     * the next thread to lock this object.
+     * <p>
+     */
+
     /**
      * Wakes up a single thread that is waiting on this object's
      * monitor. If any threads are waiting on this object, one of them
