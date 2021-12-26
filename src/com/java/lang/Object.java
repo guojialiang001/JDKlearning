@@ -98,13 +98,6 @@ public class Object {
 
 
 
-     As much as is reasonably practical, the hashCode method defined by
-     * class {@code Object} does return distinct integers for distinct
-     * objects. (This is typically implemented by converting the internal
-     * address of the object into an integer, but this implementation
-     * technique is not required by the
-     * Java&trade; programming language.)
-     */
 
     /**
      * Returns a hash code value for the object. This method is
@@ -221,6 +214,47 @@ public class Object {
     public boolean equals(Object obj) {
         return (this == obj);
     }
+
+
+
+
+    /**
+     * * Creates and returns a copy of this object.  The precise meaning
+     *      * of "copy" may depend on the class of the object. The general
+     *      * intent is that, for any object {@code x}, the expression:
+     *      创建和返回一个对象的拷贝。“复制”的确切含义可能取决于对象的类别。
+     *      总体的意图。对于任何对象 {@code x}表达式
+     *      x.clone() != x
+     *      将要变成TRUE，并且这个表达式
+     *      will be true, and that the expression:
+     *      x.clone().getClass() == x.getClass()
+     *      会变成true,但是并不是绝对的要求。
+     *      will be {@code true}, but these are not absolute requirements.
+     *      而通常情况下
+     *      x.clone().equals(x)也会变成TRUE，
+     *      这个类和他的所有超类（除了{@code Object}）遵守这个公约，他会变成是{@code x.clone().getClass() == x.getClass()}
+     *
+     *      按照约定，这个方法返回的对象应该是独立的（正在被克隆的对象）。为了实现它的独立性，
+     *      对象在返回之前,它可能有必要去修改一个对象字段或者更多的对象字段，由{@code super.clone}返回。
+     *      典型的，也就是说，复制任何易变的对象，来组成正在被克隆并且代替引用这些对象和引用这些复制的对象内部的“深层次结构”
+     *       如果一个类包含了仅仅是原始字段或对不可变对象的引用，
+     *       通常，被{@code super.clone}返回的对象中没有字段需要去修改的。
+     *       对于{@code Object}类的{@code clone} 方法 执行了一个克隆操作。
+     *       首先，如果这个对象的类没有实现{@code Cloneable}接口,然后一个{@code CloneNotSupportedException} 被抛出，
+     *       提示所有的数组都被认为实现了{@code Cloneable}接口并且数组类型{@code T[]}的{@code clone}方法的返回类型是{@code T[]}，                                                                1`
+     *          {@code T[]}T的位置是任何引用或原始类型
+     *          否则。这个方法就会创建一个新的的OBJECT的CLASS的实例并且初始化所有与此对象对应字段的内容完全相同的字段。
+     *
+
+     *      * is {@code T[]} where T is any reference or primitive type.
+     *      * Otherwise, this method creates a new instance of the class of this
+     *      * object and initializes all its fields with exactly the contents of
+     *      * the corresponding fields of this object, as if by assignment; the
+     *      * contents of the fields are not themselves cloned. Thus, this method
+     *      * performs a "shallow copy" of this object, not a "deep copy" operation.
+
+     */
+
 
     /**
      * Creates and returns a copy of this object.  The precise meaning
