@@ -321,7 +321,7 @@ public class Object {
      对于 {@code Object}class的 {@code toString}方法返回一个字符串，返回一个字符串，该字符串由对象为实例的类的名称组成
      @字符`{@code @}'和对象哈希代码的无符号十六进制表示形式
      换句话说，此方法返回的字符串等于：
-     @return  a string representation of the object.   一个陈述对象的字符串
+     @return  a string representation of the object.   一个陈述对象的字符串2323
 
      */
 
