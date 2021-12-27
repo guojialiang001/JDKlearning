@@ -321,7 +321,7 @@ public class Object {
      对于 {@code Object}class的 {@code toString}方法返回一个字符串，返回一个字符串，该字符串由对象为实例的类的名称组成
      @字符`{@code @}'和对象哈希代码的无符号十六进制表示形式
      换句话说，此方法返回的字符串等于：
-     @return  a string representation of the object.   一个陈述对象的字符串2323
+     @return  a string representation of the object.   一个陈述对象的字符串
 
      */
 
@@ -356,8 +356,21 @@ public class Object {
     /**
      *
      *唤醒正在该对象监视器上等待的单个线程.
-     * 如果任何线程正在等待这个对象，他们的其中一个会被选中被唤醒
-     * Wakes up a single thread that is waiting on this object's
+     * 如果任何线程正在等待这个对象，他们的其中一个会被选中被唤醒,选择是任意的，由实现决定
+     * 一个线程等待对象的监听器通过调用其中{@code wait}方法。
+     *被唤醒的线程将无法继续，直到当前线程放弃对该对象的锁定
+     *被唤醒的线程将以通常的方式与任何其他可能积极竞争以同步该对象的线程进行竞争
+     *例如，被唤醒的线程在成为下一个锁定该对象的线程方面没有可靠的特权或劣势
+     *
+     * 只有一个现成在一个时间可以战友一个对象的监视器
+     * 抛出  IllegalMonitorStateException -- 如果当前线程不是对象监视器的拥有者
+     * 也可以看看：
+     * notifyAll(), wait()
+     *
+     *
+     *
+     *
+     * * Wakes up a single thread that is waiting on this object's
      * monitor. If any threads are waiting on this object, one of them
      * is chosen to be awakened. The choice is arbitrary and occurs at
      * the discretion of the implementation. A thread waits on an object's
