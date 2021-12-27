@@ -223,10 +223,8 @@ public class Object {
      *      总体的意图。对于任何对象 {@code x}表达式
      *      x.clone() != x
      *      将要变成TRUE，并且这个表达式
-     *      will be true, and that the expression:
      *      x.clone().getClass() == x.getClass()
      *      会变成true,但是并不是绝对的要求。
-     *      will be {@code true}, but these are not absolute requirements.
      *      而通常情况下
      *      x.clone().equals(x)也会变成TRUE，
      *      这个类和他的所有超类（除了{@code Object}）遵守这个公约，他会变成是{@code x.clone().getClass() == x.getClass()}
@@ -243,7 +241,7 @@ public class Object {
      *        像是被指派的，字段的内容本身不是克隆的。因此。这个方法表现了一个对象的“浅复制”,不是一个“深复制”操作。
      *       这个{@code Object}本身不实现接口{@code Cloneable},所以调用这个 {@code clone}方法在类为{@code object}的对象上，将导致出现引发运行时异常
      *
-     *       * @return     a clone of this instance. 一个克隆的实例
+     *       * @return     一个克隆的实例
      *       * @throws  CloneNotSupportedException
      *       如果对象的class不支持{@code Cloneable}接口，子类重写{@code clone}可能也抛出错误表明一个实例不能被克隆。
      *
@@ -356,33 +354,28 @@ public class Object {
     /**
      *
      *唤醒正在该对象监视器上等待的单个线程.
-     * 如果任何线程正在等待这个对象，他们的其中一个会被选中被唤醒,选择是任意的，由实现决定
-     * 一个线程等待对象的监听器通过调用其中{@code wait}方法。
+     *如果任何线程正在等待这个对象，他们的其中一个会被选中被唤醒,选择是任意的，由实现决定
+     *一个线程等待对象的监听器通过调用其中{@code wait}方法。
      *被唤醒的线程将无法继续，直到当前线程放弃对该对象的锁定
      *被唤醒的线程将以通常的方式与任何其他可能积极竞争以同步该对象的线程进行竞争
      *例如，被唤醒的线程在成为下一个锁定该对象的线程方面没有可靠的特权或劣势
      *
-     * 只有一个现成在一个时间可以战友一个对象的监视器
-     * 抛出  IllegalMonitorStateException -- 如果当前线程不是对象监视器的拥有者
-     * 也可以看看：
-     * notifyAll(), wait()
+     *只有一个现成在一个时间可以占有一个对象的监视器
+     *抛出  IllegalMonitorStateException -- 如果当前线程不是对象监视器的拥有者
+     *也可以看看：
+     *notifyAll(), wait()
      *
+     *这个方法应该仅仅被一个线程调用，对这个对象的监视器占有。
+     *线程通过以下三种方式之一成为对象监视器的所有者:
+     *   通过执行一个同步的实例对象方法。
+     *   通过执行{@code synchronized}语句的主体,在对象上同步。
+     *   对于对象的类型{@code Class,}通过执行一个类的同步静态方法
+     *一个线程在一个时间只能够占有一个对象的监视器。
      *
+     * @throws  IllegalMonitorStateException   如果当前线程不是对象监视器的所有者
+     * @see        java.lang.Object#notifyAll()
+     * @see        java.lang.Object#wait()
      *
-     *
-     * * Wakes up a single thread that is waiting on this object's
-     * monitor. If any threads are waiting on this object, one of them
-     * is chosen to be awakened. The choice is arbitrary and occurs at
-     * the discretion of the implementation. A thread waits on an object's
-     * monitor by calling one of the {@code wait} methods.
-     * <p>
-     * The awakened thread will not be able to proceed until the current
-     * thread relinquishes the lock on this object. The awakened thread will
-     * compete in the usual manner with any other threads that might be
-     * actively competing to synchronize on this object; for example, the
-     * awakened thread enjoys no reliable privilege or disadvantage in being
-     * the next thread to lock this object.
-     * <p>
      */
 
     /**
@@ -419,6 +412,25 @@ public class Object {
      */
     public final native void notify();
 
+
+
+    /**
+     *
+     *
+     * 唤醒全部线程让它们等待对象监视器。 一个线程等待一个对象监视器，通过调用对象的其中之一的{@code wait}方法
+     * 被唤醒的线程将无法继续直到当前线程放弃在对象上的锁。
+     * 被唤醒的线程将以通常的方式与任何其他线程竞争,可能活跃的完成对象的同步。
+     * 举例子，唤醒的线程在成为下一个锁定此对象的线程时没有可靠的特权或缺点
+     * 此方法只能由作为此对象监视器所有者的线程调用,对于一方式的形容，
+     * 看到{@code notify}方法描述了线程成为监视器所有者的方式，
+     *  * @throws  IllegalMonitorStateException   如果当前线程不是对象监视器的持有者。
+     *      * @see        java.lang.Object#notify()
+     *      * @see        java.lang.Object#wait()
+     */
+
+
+
+
     /**
      * Wakes up all threads that are waiting on this object's monitor. A
      * thread waits on an object's monitor by calling one of the
@@ -442,6 +454,59 @@ public class Object {
      * @see        java.lang.Object#wait()
      */
     public final native void notifyAll();
+
+
+
+
+
+    /**
+     *
+     *
+     * 由于当前线程等待直到另一个线程调用{@link java.lang.Object#notify()}方法或者
+     * 对于对象的 {@link java.lang.Object#notifyAll()}方法，或者经过了指定的时间
+     * 当前线程必须持有对象的监视器
+     * 这个方法由于当前线程（调用它的T）将自身置于此对象的等待集中，然后放弃并且在对象上主张同步。
+     * 线程T出于线程调度目的而禁用，并处于休眠状态
+     * 直到其中四个之一发生：
+     * 1一些其他线程调用{@code notify}方法对于这个对象和线程T,碰巧被任意选择为要唤醒的线程.
+     * 2一些其他线程对于对象调用{@code notifyAll}方法，
+     * 3一些其他线程{@linkplain Thread#interrupt() interrupts} 线程T
+     * 4指定的实时时间已过，或多或少，如果{@code timeout}为0,那么就没有考虑到实时性，线程只是等待直到通知。
+     * 线程T然后从该对象的等待集中删除，并重新启用线程调度 然后，它以通常的方式与其他线程竞争在对象上同步的权限,
+     * 一旦收获到了对象的控制权，它对对象的所有同步声明都恢复到原来的状态，即对于这个调用{@code wait}方法时的情况
+     * 因此，从这个{@code wait}方法返回，对象和线程{@code T}的同步状态与调用{@code wait}方法时完全相同。
+     * 一个线程也能在没有通知的情况下被唤醒。中断或者超时，一个所谓的虚假唤醒。而这在实践中很少发生。
+     * 应用程序必须通过测试导致线程被唤醒的条件来防范它,如果条件不满足，则继续等待
+     * 换句话说，等待应该一直循环发生，就像是这个一样。
+     *  synchronized (obj) {
+     *               while (&lt;condition does not hold&gt;)
+     *                   obj.wait(timeout);
+     *               ... // Perform action appropriate to condition
+     *           }
+     *
+     *（有关此主题的更多信息，请参阅Doug Lea的“Java并发编程（第二版）”
+     * （Addison Wesley，2000）中的第3.2.3节，或Joshua Bloch的“有效Java编程语言指南”
+     * （Addison Wesley，2001）中的第50项）。
+     * 如果当前线程被{@linkplain java.lang.Thread#interrupt() interrupted}任何线程之前或者当它正在等待中。
+     * 然后一个{@code InterruptedException}被抛出来。这个错误是不会被抛出直到如上所述恢复此对象的锁定状态
+     * 注释:表示{@code wait}方法，它将当前线程放入此对象的等待集中,仅仅释放这个对象。当线程等待时，
+     * 可以同步当前线程的任何其他对象将保持锁定状态。
+     * 此方法只能由作为此对象监视器所有者的线程调用.
+     * 请参阅{@code notify}方法，了解线程成为监视器所有者的方式的描述
+     *
+
+     *
+     * @param      timeout   等待的最长时间（毫秒）。
+     * @throws  IllegalArgumentException    如果超时值为负。
+     * @throws  IllegalMonitorStateException 如果当前线程不是对象监视器的所有者
+     *
+     * @throws  InterruptedException 如果任何线程在当前线程等待通知之前或期间中断了当前线程。
+     *                               引发此异常时，当前线程的中断状态将被清除。
+     * @see        java.lang.Object#notify()
+     * @see        java.lang.Object#notifyAll()
+     */
+
+
 
     /**
      * Causes the current thread to wait until either another thread invokes the
@@ -530,6 +595,47 @@ public class Object {
      */
     public final native void wait(long timeout) throws InterruptedException;
 
+
+
+
+    /**
+     * 由于当前线程等待直到另一个线程调用{@link java.lang.Object#notify()}方法或者
+     * 对于对象的 {@link java.lang.Object#notifyAll()}方法，或者经过了指定的时间
+     * 当前线程必须持有对象的监视器
+     *
+     * 这个方法和{@code wait}方法是一样的一个参数，但它允许更好地控制在放弃之前等待通知的时间
+     * 实时数据量以纳秒为单位测量由以下公式得出：
+     * 1000000*timeout+nanos
+     * 在所有其他的方面，此方法与一个参数的方法{@link#wait（long）}的作用相同
+     * 特别的，{@code wait（0，0）}与{@code wait（0）}的意思相同。
+     * 当前线程必须持有这个对象监视器。线程释放此监视器的所有权并等待直到
+     * 出现以下两种情况之一：
+     *      1另一个线程通知等待此对象监视器的线程通过调用来唤醒
+     *      2超时时间(由{@code timeout}毫秒加上{@code nanos} 纳秒参数)经过了。
+     * 线程然后等待直到它能重新获得监视器的所有权并继续执行。
+     *
+     *  在一个参数版本中，中断和虚假唤醒是可能的，并且这个方法应该总是在循环中使用:
+     *  synchronized (obj) {
+     *               while (&lt;condition does not hold&gt;)
+     *                   obj.wait(timeout, nanos);
+     *               ... // Perform action appropriate to condition
+     *           }
+     *  此方法只能由作为此对象监视器所有者的线程调用.
+     * 请参阅{@code notify}方法，了解线程成为监视器所有者的方式的描述
+     *
+     *
+     *
+     * @param      timeout   最大等待时间，单位为毫秒。
+     * @param      nanos      额外时间，以纳秒为单位0-999999.
+     *
+     * @throws  IllegalArgumentException      如果timeout值为负值或nanos值不在0 ~ 999999范围内。
+     * @throws  IllegalMonitorStateException  如果当前线程不是这个对象监视器的所有者。
+     * @throws  InterruptedException  如果任何线程在当前线程之前或在当前线程期间中断了当前线程
+     *                                在等通知。当抛出此异常时，当前线程的中断状态将被清除。
+     */
+
+
+
     /**
      * Causes the current thread to wait until another thread invokes the
      * {@link java.lang.Object#notify()} method or the
@@ -594,19 +700,23 @@ public class Object {
      */
     public final void wait(long timeout, int nanos) throws InterruptedException {
         if (timeout < 0) {
+           //如果超时抛出IllegalArgumentException 超时值为负值
             throw new IllegalArgumentException("timeout value is negative");
         }
 
         if (nanos < 0 || nanos > 999999) {
+            //纳秒超时值超出范围
             throw new IllegalArgumentException(
                                 "nanosecond timeout value out of range");
         }
-
         if (nanos > 0) {
+            //纳秒没有超出范围有时间。
             timeout++;
+            //增加最大等待时间。
         }
 
         wait(timeout);
+        //调用wait方法。
     }
 
     /**
