@@ -719,6 +719,36 @@ public class Object {
         //调用wait方法。
     }
 
+
+
+
+    /**
+     *
+     * 由于当前线程等待直到其他线程调用这个对象的{@link java.lang.Object#notify()}方法或者{@link java.lang.Object#notifyAll()}方法
+     * 换句话说，此方法的行为就像它只是执行调用 {@code wait(0)} 一样。
+     *
+     * 当前线程必须持有对象监视器。线程释放监视器所有权并且等待直到其他线程通知线程等待这个对象的监视器去唤醒
+     * 通过调用一个{@code notify}方法或者 {@code notifyAll}方法，线程然后等待直到它能重新获得监视器的所有权并恢复执行
+     *
+     * 作为在这个参数的版本中，中断和虚假唤醒是可能的，并且应该始终在循环中使用此方法
+     *
+     *     synchronized (obj) {
+     *         while (&lt;condition does not hold&gt;)
+     *             obj.wait();
+     *         ... // Perform action appropriate to condition
+     *     }
+     *
+     * 此方法只能由作为此对象监视器的所有者的线程调用
+     * 有关线程可以成为监视器所有者的方式的描述，请参阅 {@code notify} 方法。
+     *
+     *   * @throws  IllegalMonitorStateException  如果当前线程不是对象监视器的所有者。
+     *   * @throws  InterruptedException  如果任何线程在当前线程等待通知之前或期间中断了当前线程。 抛出该异常时清除当前线程的中断状态。
+     *   * @see        java.lang.Object#notify()
+     *   * @see        java.lang.Object#notifyAll()
+     *
+     *
+     */
+
     /**
      * Causes the current thread to wait until another thread invokes the
      * {@link java.lang.Object#notify()} method or the
@@ -760,6 +790,33 @@ public class Object {
     public final void wait() throws InterruptedException {
         wait(0);
     }
+
+
+
+
+    /**
+     *
+     *当垃圾收集器确定不再有对对象的引用时，由垃圾收集器在对象上调用。
+     *一个子类重写{@code finalize}方法处理系统资源或执行其他清理的方法。
+     *一般的这个{@code finalize}协议是当 Java&trade;虚拟机已确定不再有任何方法可以让任何尚未死亡的线程访问此对象
+     *除非由于某个其他准备好被终结的对象或类的终结所采取的行动
+     *{@code finalize} 方法可能采取任何行动，包括让这个对象再次可用于其他线程
+     * 是{@code finalize} 的通常目的，然而是在对象被不可撤销地丢弃之前执行清理操作。
+     * 举个例子，表示输入/输出连接的对象的 finalize 方法可能会执行显式 I/O 事务以在对象被永久丢弃之前断开连接。
+     *{@code Object} 类的 {@code finalize} 方法不执行任何特殊操作，它只是正常返回.{@code Object} 的子类可能会覆盖此定义。
+     *Java程序语言不会保证哪个线程将调用任何给定对象的 {@code finalize} 方法
+     *但是，可以保证调用 finalize 的线程在调用 finalize 时不会持有任何用户可见的同步锁
+     *如果 finalize 方法抛出未捕获的异常，则忽略该异常并终止该对象的终结。
+     *
+     * 在{@code finalize}方法之后调用一个对象，在 Java 虚拟机再次确定任何尚未终止的线程无法再访问此对象之前，不会采取进一步的行动
+     *包括准备完成的其他对象或类的可能操作，此时该对象可能会被丢弃。
+     *{@code finalize} 方法永远不会被 Java 虚拟机对任何给定对象调用多次。
+     *{@code finalize} 方法抛出的任何异常都会导致该对象的终结被暂停，但会被忽略。
+     * @throws Throwable 此方法引发的 {@code Exception}
+     * @see java.lang.ref.WeakReference
+     * @see java.lang.ref.PhantomReference
+     * @jls 12.6 类实例的终结
+     */
 
     /**
      * Called by the garbage collector on an object when garbage collection
