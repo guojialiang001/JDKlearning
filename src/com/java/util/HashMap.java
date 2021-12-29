@@ -230,10 +230,29 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * avoid aliasing errors amid all of the twisty pointer operations.
      */
 
+
+    /**
+     * 默认的初始容量，必须要是二的幂次数量。
+     */
+
     /**
      * The default initial capacity - MUST be a power of two.
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
+
+
+
+    /**
+     * 最大容量，在两个带参数的构造函数中的任何一个隐式指定了更高的值时使用
+     * 必须是2的幂小于等于 1<<30（2乘1073741824）。
+     *
+     *  *是位移运算符， <<左移运算符，>>右移运算符，还有不带符号的位移运算 >>>
+     *      *计算过程以1<<30为例,首先把1转为二进制数字 0000 0000 0000 0000 0000 0000 0000 0001
+     *      *然后将上面的二进制数字向左移动30位后面补0得到 0100 0000 0000 0000 0000 0000 0000 0000
+     *      *最后将得到的二进制数字转回对应类型的十进制,运行结果为: 2乘1073741824
+     *      *>>运算规则：按二进制形式把所有的数字向右移动对应位数，低位移出（舍弃），高位的空位补符号位，即正数补零，负数补1
+     *      *>>>运算规则：按二进制形式把所有的数字向右移动对应位数，低位移出（舍弃），高位的空位补零。对于正数来说和带符号右移相同，对于负数来说不同
+     */
 
     /**
      * The maximum capacity, used if a higher value is implicitly specified
@@ -241,6 +260,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * MUST be a power of two <= 1<<30.
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
+
+    /**
+     * 构造函数中未指定时使用的负载因子。
+     */
 
     /**
      * The load factor used when none specified in constructor.
@@ -273,16 +296,28 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     static final int MIN_TREEIFY_CAPACITY = 64;
 
     /**
+     *
+     *基本散列箱节点，用于大多数条目 （参见下面的TreeNode子类，以及LinkedHashMap中的Entry子类。）
+     */
+
+    /**
      * Basic hash bin node, used for most entries.  (See below for
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
      */
+
     static class Node<K,V> implements Map.Entry<K,V> {
+        // 静态内部类，node节点，继承于Map.Entry接口
         final int hash;
+        //hash 变量 不可变
         final K key;
+        // key  不可变
         V value;
+        // value
         Node<K,V> next;
+        //下一个节点。
 
         Node(int hash, K key, V value, Node<K,V> next) {
+            //有参数构造方法。
             this.hash = hash;
             this.key = key;
             this.value = value;
@@ -290,33 +325,57 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
 
         public final K getKey()        { return key; }
+        //获取key值直接返回
         public final V getValue()      { return value; }
+        //获取value值直接返回
         public final String toString() { return key + "=" + value; }
-
+        //获取当前节点key和value的全部值输出
         public final int hashCode() {
             return Objects.hashCode(key) ^ Objects.hashCode(value);
         }
+        //hashcode  对象的hashcode方法（key）异或上对象的hashcode方法(value)。
 
         public final V setValue(V newValue) {
+            // 设置value，参数接入新的value值，返回旧的value值，当前对象value赋值为新值。
             V oldValue = value;
             value = newValue;
             return oldValue;
         }
 
         public final boolean equals(Object o) {
+            //equals方法。
             if (o == this)
+                //如果传入参数等于当前对象。
                 return true;
+                //返回true
             if (o instanceof Map.Entry) {
+                //如果传入参数是Map.Entry的相关实例。
                 Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+                //赋值相关Map.Entry
                 if (Objects.equals(key, e.getKey()) &&
                     Objects.equals(value, e.getValue()))
+                    //如果当前对象的key等于entry实例的key并且当前对象的value等于entry实例的value
                     return true;
             }
             return false;
+            //否则返回false
         }
     }
 
     /* ---------------- Static utilities -------------- */
+
+
+    /**
+     *
+     * 计算KEY的hashCode() 和 将散列的高位扩展到低位。因为这个表使用了二次幂的伪装。
+     * 仅在当前掩码上方的位上变化的哈希集将始终发生冲突。
+     *（已知示例中有一组浮动键，它们在小表格中保持连续整数。
+     * 所以我们申请一个向下传播高位影响的变换。
+     * 在速度和实用性之间需要权衡，并且字节分摊开来。因为许多常见的散列集已经合理地分布了，（所以不要从传播中获益），
+     * 因为我们使用树来处理箱子中的大量碰撞.
+     * 我们只是以尽可能便宜的方式对一些移位位进行异或运算，以减少系统损耗
+     * 以及合并最高位的影响，否则，由于表边界，最高位将永远不会用于索引计算。
+     */
 
     /**
      * Computes key.hashCode() and spreads (XORs) higher bits of hash
@@ -336,7 +395,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int hash(Object key) {
         int h;
+        //变量
+
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+        //如果KEY为空，返回0 否则-> （调用hashCode()赋值到h） 异或 （h无符号右移16位。）
+        //”>>>"表示无符号右移，也叫逻辑右移，即若该数为正，则高位补0，而若该数为负数，则右移后高位同样补0。
     }
 
     /**
@@ -387,6 +450,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /* ---------------- Fields -------------- */
 
+
+
+    /**
+     * 节点的表，最初加载的时候使用，并且并根据需要调整大小
+     * 当分配的时候，长度一直是二的幂次数。
+     *（我们在某些操作中也允许长度为零，以允许当前不需要的引导机制。）
+     */
+
     /**
      * The table, initialized on first use, and resized as
      * necessary. When allocated, length is always a power of two.
@@ -426,9 +497,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     // DEFAULT_INITIAL_CAPACITY.)
     int threshold;
 
+
     /**
      * The load factor for the hash table.
-     *
+     *哈希表的加载因子。
      * @serial
      */
     final float loadFactor;
@@ -596,6 +668,19 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return getNode(hash(key), key) != null;
     }
 
+
+
+
+    /**
+     * 将指定的值与此映射中的指定键相关联。
+     * 如果映射以前包含键的映射，则替换旧值。
+     * @param key 与指定值关联的键
+     * @param value 要与指定键关联的值
+     * @return 与键关联的上一个值,或者null值，如果那些没有映射到KEY.（一个null返回值还可以指示先前与key关联的映射null）
+     *
+     *
+     */
+
     /**
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for the key, the old
@@ -612,6 +697,19 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return putVal(hash(key), key, value, false, true);
     }
 
+
+    /**
+     * Implements Map.put and related methods.
+     * 实现了map.put及其相关方法。
+     *
+     * @param hash hash for key key的HASH值
+     * @param key the key key值
+     * @param value the value to put  放置的VALUE值
+     * @param onlyIfAbsent if true, don't change existing value 如果是true的话，不用改变现存的值。
+     * @param evict if false, the table is in creation mode. 如果是FALSE，该表处于创建模式
+     * @return previous value, or null if none   以前的值，如果没有，则为null
+     */
+
     /**
      * Implements Map.put and related methods.
      *
@@ -624,9 +722,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
+
         Node<K,V>[] tab; Node<K,V> p; int n, i;
+        //node数组        node节点P      变量n   变量i
         if ((tab = table) == null || (n = tab.length) == 0)
+            //先将类的node表赋值到当前tab中 如果为空 或者，tab的长度也赋值给n 长度为0
+            //  tab  如果为空 或者 tab的长度为0
             n = (tab = resize()).length;
+            //
         if ((p = tab[i = (n - 1) & hash]) == null)
             tab[i] = newNode(hash, key, value, null);
         else {
@@ -665,6 +768,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return null;
     }
 
+
+    /**
+     * 将表格大小初始化或加倍，如果为空，根据现场阈值中的初始容量目标进行分配。
+     * 否则，因为我们正在使用二的幂次扩张，每个存储箱中的元素必须保持相同的索引,
+     * 或者在新表中移动二的幂次的偏移量。
+     * @return the table
+     */
+
     /**
      * Initializes or doubles table size.  If null, allocates in
      * accord with initial capacity target held in field threshold.
@@ -676,70 +787,120 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final Node<K,V>[] resize() {
         Node<K,V>[] oldTab = table;
+        //将类中node表赋值到旧有tab中。
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        //如果旧有表为null那么旧有容量为0，要不然旧有的容量就是旧表的容量。
         int oldThr = threshold;
+        //将阈值赋值到旧有的阈值变量
         int newCap, newThr = 0;
+        //新的cap标记容量，和新的阈值
         if (oldCap > 0) {
+            //如果旧有容量大于0
             if (oldCap >= MAXIMUM_CAPACITY) {
+                //如果旧有容量大于等于最大容量
                 threshold = Integer.MAX_VALUE;
+                //阈值为integer的最大值2^31-1
                 return oldTab;
+                //然后返回旧有表
             }
             else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
+                //<<      :     左移运算符，num << 1,相当于num乘以2
+                //新的容量为2倍。 如果新的容量小于最大容量，并且旧有的容量大于等于初始容量16
                 newThr = oldThr << 1; // double threshold
+                //新的阈值赋值为旧有阈值的2倍。
         }
-        else if (oldThr > 0) // initial capacity was placed in threshold
+        else if (oldThr > 0) // initial capacity was placed in threshold初始容量设置为阈值
+        //如果旧有的阈值大于0
             newCap = oldThr;
-        else {               // zero initial threshold signifies using defaults
+            //新的容量等于旧有的阈值。
+        else {               // zero initial threshold signifies using defaults零初始阈值表示使用默认值
             newCap = DEFAULT_INITIAL_CAPACITY;
+            //新容量为默认初始容量
             newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+            //新阈值为0.75f*默认初始化容量。
         }
         if (newThr == 0) {
+        //如果新的阈值为0
             float ft = (float)newCap * loadFactor;
+            //ft为 新容量*hash表的加载银子。
             newThr = (newCap < MAXIMUM_CAPACITY && ft < (float)MAXIMUM_CAPACITY ?
                       (int)ft : Integer.MAX_VALUE);
+            //新的阈值= 新的容量如果小于最大容量，并且》（ft小于最大容量的话就是ft,要不然就是integer的最大容量。）
         }
         threshold = newThr;
+        //阈值为新的阈值同步。
         @SuppressWarnings({"rawtypes","unchecked"})
         Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+        //节点新表为新建node长度为新的容量大小的数组。
         table = newTab;
+        //table值更新为新的tab值。
         if (oldTab != null) {
+            //如果旧有得表不为空
             for (int j = 0; j < oldCap; ++j) {
+                //循环遍历旧有的容量
                 Node<K,V> e;
+                //变量E
                 if ((e = oldTab[j]) != null) {
+                 //赋值e为旧有的J元素,如果他不为空。
                     oldTab[j] = null;
+                    //旧有表J元素赋值为NULL
                     if (e.next == null)
+                        //如果E的下一个节点为空
                         newTab[e.hash & (newCap - 1)] = e;
+                        //把E赋值为新表[e的hash值 与 新表容量-1]
                     else if (e instanceof TreeNode)
+                        //如果e是treenode的实例
                         ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
-                    else { // preserve order
+                        //e转化为TREEnode吗，并且分割节点。
+                    else { // preserve order 维持秩序
                         Node<K,V> loHead = null, loTail = null;
                         Node<K,V> hiHead = null, hiTail = null;
                         Node<K,V> next;
                         do {
                             next = e.next;
+                            // next为e的下一个节点。
                             if ((e.hash & oldCap) == 0) {
+                                //如果e的hash 与 旧有容量 如果等于0
                                 if (loTail == null)
+                                    //低链表尾巴为空
                                     loHead = e;
+                                    //低链表头节点为e
                                 else
                                     loTail.next = e;
+                                    ////否则低链表尾节点的下一个节点为e
+
                                 loTail = e;
+                                //低链表的尾节点为e
                             }
                             else {
+                                // 否则高链表的尾节点为空
                                 if (hiTail == null)
+                                    // 高链表的尾节点为空
                                     hiHead = e;
+                                    // 高链表的头节点为e
                                 else
                                     hiTail.next = e;
+                                // 高链表的尾节点的下一个节点为e
                                 hiTail = e;
+                                // 高链表的尾节点为e
+
                             }
                         } while ((e = next) != null);
+                          // e 为next节点，e不为空
                         if (loTail != null) {
+                            //如果 //低链表的尾节点不为空
                             loTail.next = null;
+                            //低链表的尾节点的下一个节点为空
                             newTab[j] = loHead;
+                            //新表的J元素为 低链表的头节点
                         }
                         if (hiTail != null) {
+                            //如果  高链表的尾节点不为空
                             hiTail.next = null;
+                            //如果  高链表的尾节点的下一个节点为null
                             newTab[j + oldCap] = hiHead;
+                            //新表的[J+旧表的容量]的元素为 // 高链表的头节点。
                         }
                     }
                 }

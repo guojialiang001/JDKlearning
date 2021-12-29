@@ -6,6 +6,7 @@ package com.tolearning;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class Main {
 
     public static void main(String[] args) {
@@ -15,11 +16,21 @@ public class Main {
 
        // System.out.println(a);
 
-        Number n = 0;
-      Class<? extends Number> c = n.getClass();
+//        Number n = 0;
+//      Class<? extends Number> c = n.getClass();
+//
+//
+//        System.out.println(c);
+//
+        Map map=  new HashMap<String ,Object>();
 
 
-        System.out.println(c);
+
+
+        map.put("232","2455");
+
+
+
 
 
     }
