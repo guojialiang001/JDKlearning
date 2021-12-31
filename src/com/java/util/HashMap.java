@@ -744,9 +744,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         //如果在该位置有冲突
         //   如果hash相同，key也相同，那么可以判断为同一份节点，直接替换
         //   如果hash计算出来的节点是树状节点实例，那么调用putTreeVal增加树状节点
-        //   其他情况就是在尾部增加新节点，如果达到TREEIFY_THRESHOLD阈值，那么会调整树状结构的节点。
+        //   其他情况就是在尾部增加新节点，如果达到TREEIFY_THRESHOLD(8)阈值，那么会调整树状结构的节点。
         //   加入map之后，根据onlyIfAbsent更改新值返回
-        //hash没有冲突或者的情况下会增加一次调整数量和MAP数量，如果大于阈值，会进行再一次的重新计算容量操作。
+        //hash没有冲突的情况下会增加一次结构调整数量和MAP数量，如果大于阈值，会进行再一次的重新计算容量操作。
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         //node数组        node节点P      变量n   变量i
         if ((tab = table) == null || (n = tab.length) == 0)
