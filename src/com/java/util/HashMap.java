@@ -473,9 +473,17 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     transient Set<Map.Entry<K,V>> entrySet;
 
     /**
+     * 此映射中包含的键值映射数。
+     */
+    /**
      * The number of key-value mappings contained in this map.
      */
     transient int size;
+
+    /**
+     * 此HashMap在结构上被修改的次数结构修改是指更改HashMap中映射数量或以其他方式修改其内部结构的修改 (e.g.,
+     * rehash).他的字段用于使HashMap集合视图上的迭代器快速失败。（参见ConcurrentModificationException）.
+     */
 
     /**
      * The number of times this HashMap has been structurally modified
@@ -485,6 +493,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * the HashMap fail-fast.  (See ConcurrentModificationException).
      */
     transient int modCount;
+
+
+    /**
+     * 要调整大小的下一个大小值（容量*负载系数）。
+     *
+     * @serial
+     */
+    // (序列化后，javadoc描述为true。.
+    // 此外，如果尚未分配表数组，则此字段保存初始数组容量，或零表示默认的初始容量.)
 
     /**
      * The next size value at which to resize (capacity * load factor).
@@ -722,49 +739,83 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
                    boolean evict) {
-
+        //判断当前状态是否为空，如果为空重新计算容量，
+        //如果计算出的hash值的数组位置为空，在该位置新建一个节点即可。
+        //如果在该位置有冲突
+        //   如果hash相同，key也相同，那么可以判断为同一份节点，直接替换
+        //   如果hash计算出来的节点是树状节点实例，那么调用putTreeVal增加树状节点
+        //   其他情况就是在尾部增加新节点，如果达到TREEIFY_THRESHOLD阈值，那么会调整树状结构的节点。
+        //   加入map之后，根据onlyIfAbsent更改新值返回
+        //hash没有冲突或者的情况下会增加一次调整数量和MAP数量，如果大于阈值，会进行再一次的重新计算容量操作。
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         //node数组        node节点P      变量n   变量i
         if ((tab = table) == null || (n = tab.length) == 0)
             //先将类的node表赋值到当前tab中 如果为空 或者，tab的长度也赋值给n 长度为0
             //  tab  如果为空 或者 tab的长度为0
             n = (tab = resize()).length;
-            //
+            //数组列表重新计算容量和长度。 将n设置为重新计算的长度
         if ((p = tab[i = (n - 1) & hash]) == null)
+            //将P设为数组列表HASH散列后的数组值如果为空.说明在数组没有hash冲突,就可以根据i的位置在数组上设置相关节点。
             tab[i] = newNode(hash, key, value, null);
         else {
+            //hash位置说明有相关冲突。
             Node<K,V> e; K k;
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
+                //P的HASH值等于当前hash值，(P的key赋值为K )并且K等于KEY 或者 key不为空，且key等于K值。
+                //PUT节点的HASH值等于传入的hash值，或者KEY相等且不为空。
                 e = p;
+                //P赋值为E
             else if (p instanceof TreeNode)
+                //如果P是TREENODE的相关实例。
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+                // p 转化为TREENODE，走putTreeVal方法
             else {
+                //hash值不同，KEY也不同。数组表中的位置新加节点。
+                //当前区域块中，P为tab HASH后的节点。e为新加入的节点。
                 for (int binCount = 0; ; ++binCount) {
+                //循环箱子数量
                     if ((e = p.next) == null) {
+                        //将P的下一个节点赋值为e ，如果e为空。
                         p.next = newNode(hash, key, value, null);
+                        //将P的下一个位置设置为新的节点。
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
                             treeifyBin(tab, hash);
+                        //如果箱子循环次数>=树状结构的阈值（8）-1
                         break;
+                        //跳出当前循环
                     }
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
+                        //PUT节点的HASH值等于传入的hash值，或者KEY相等且不为空。
                         break;
+                        //跳出当前循环
                     p = e;
+                    //极端情况会将该位置直接替换
                 }
             }
             if (e != null) { // existing mapping for key
+                //如果e不为空
                 V oldValue = e.value;
+                //e得值赋值给旧有节点值
                 if (!onlyIfAbsent || oldValue == null)
+                    //onlyIfAbsent如果为true，则不更改现有值
+                    //onlyIfAbsent如果为false，更改现有值 或者,旧有节点（上一个增加节点）为空。
                     e.value = value;
+                    //e就赋值
                 afterNodeAccess(e);
+                //linkhashmap回调方法。
                 return oldValue;
+                //返回e值。
             }
         }
         ++modCount;
+        //增加一次修改hash表的次数。
         if (++size > threshold)
+            //增加一次MAP映射数，如果数量大于阈值的话，还会进行一次重新调整容量得操作。
             resize();
         afterNodeInsertion(evict);
+        //linkhashmap回调方法。
         return null;
     }
 
@@ -1940,6 +1991,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     // Callbacks to allow LinkedHashMap post-actions
+    //允许LinkedHashMap post操作的回调
+
     void afterNodeAccess(Node<K,V> p) { }
     void afterNodeInsertion(boolean evict) { }
     void afterNodeRemoval(Node<K,V> p) { }
