@@ -436,9 +436,69 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 返回给定目标容量的2的幂。
+     */
+
+    /**
      * Returns a power of two size for the given target capacity.
      */
     static final int tableSizeFor(int cap) {
+        //将CAP传入的值减一。 然后将二进制中的最高非0位后面全置为1，再加一既可以得到大于cap的最小的二次幂数。
+        //如果为服务数直接返回1，如果大于等于最大容量，直接返回最大容量，要不然就是加一返回。
+       /*
+        如果CAP为6
+        n = 5时
+         n |= n >>> 1;       n |= n >>> 2;      n |= n >>> 4;       n |= n >>> 8;             n |= n >>> 16;
+         0000 0101           0000 0111          0000 0111           0000 0111                 0000 0111
+         0000 0010           0000 0001          0000 0000           0000 0000                 0000 0000
+ 结果->   0000 0111           0000 0111          0000 0111           0000 0111                 0000 0111
+
+        0000 0111 加1 等于8
+
+
+        如果CAP为10
+        n = 9时
+         n |= n >>> 1;       n |= n >>> 2;      n |= n >>> 4;       n |= n >>> 8;             n |= n >>> 16;
+         0000 1001           0000 1101          0000 1111           0000 1111                 0000 1111
+         0000 0100           0000 0011          0000 0000           0000 0000                 0000 0000
+  结果->  0000 1101           0000 1111          0000 1111           0000 1111                 0000 1111
+
+         0000 1111 加1 等于16
+
+
+         如果CAP为18
+        n = 17时
+         n |= n >>> 1;       n |= n >>> 2;      n |= n >>> 4;       n |= n >>> 8;             n |= n >>> 16;
+         0001 0001           0001 1001          0001 1111           0001 1111                 0001 1111
+         0000 1000           0000 0110          0000 1111           0000 0000                 0000 0000
+  结果->  0001 1001           0001 1111          0001 1111           0001 1111                 0001 1111
+        0001 1111 加1 等于32
+
+        n=  17   ;   0000 0000  0000 0000  0000 0000  0001 0001
+	  n |= n >>> 1;  0000 0000  0000 0000  0000 0000  0001 1001
+	  n |= n >>> 2;  0000 0000  0000 0000  0000 0000  0001 1111
+	  n |= n >>> 4;  0000 0000  0000 0000  0000 0000  0001 1111
+	  n |= n >>> 8;  0000 0000  0000 0000  0000 0000  0001 1111
+	  n |= n >>> 16; 0000 0000  0000 0000  0000 0000  0001 1111
+
+      n=  65532   ;  0000 0000  0000 0000  1111 1111  1111 1100
+	  n |= n >>> 1;  0000 0000  0000 0000  1111 1111  1111 1110
+	  n |= n >>> 2;  0000 0000  0000 0000  1111 1111  1111 1111
+	  n |= n >>> 4;  0000 0000  0000 0000  1111 1111  1111 1111
+	  n |= n >>> 8;  0000 0000  0000 0000  1111 1111  1111 1111
+	  n |= n >>> 16; 0000 0000  0000 0000  1111 1111  1111 1111
+
+       n=   极限值  ; 1000 0000  0000 0000  0000 0000  0000 0000
+	  n |= n >>> 1;  1100 0000  0000 0000  0000 0000  0000 0000
+	  n |= n >>> 2;  1111 0000  0000 0000  0000 0000  0000 0000
+	  n |= n >>> 4;  1111 1111  0000 0000  0000 0000  0000 0000
+	  n |= n >>> 8;  1111 1111  1111 1111  0000 0000  0000 0000
+	  n |= n >>> 16; 1111 1111  1111 1111  1111 1111  1111 1111
+
+
+    经过5次计算最后的结果刚好可以填满32位的空间 也就是一个int类型的空间，这就是为什么必须是int类型，且最多只无符号右移16位
+    经过5次之后，最高位之后32位内，之后都是1，所以在int正数范围内，是可行的。
+        */
         int n = cap - 1;
         n |= n >>> 1;
         n |= n >>> 2;
@@ -447,6 +507,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         n |= n >>> 16;
         return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
     }
+
 
     /* ---------------- Fields -------------- */
 
@@ -580,6 +641,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 实现映射。putAll和Map构造函数。
+     * @param m the map
+     * @param evict 最初构造此映射时为false，否则为true（在节点插入后转发到方法）。
+     */
+
+    /**
      * Implements Map.putAll and Map constructor.
      *
      * @param m the map
@@ -588,15 +655,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
         int s = m.size();
+        //传输进来的MAP赋值容量大小
         if (s > 0) {
+            //如果容量大于0
             if (table == null) { // pre-size
+                //当前MAP表为空
                 float ft = ((float)s / loadFactor) + 1.0F;
+                //ft=传输MAP容量除加载因子加1
                 int t = ((ft < (float)MAXIMUM_CAPACITY) ?
                          (int)ft : MAXIMUM_CAPACITY);
+                //如果FT小于最大容量，T等于FT，如果大于最大容量T等于最大容量值。
                 if (t > threshold)
+                    //如果T大于阈值 返回阈值为大于T的最小的二次幂数
                     threshold = tableSizeFor(t);
             }
             else if (s > threshold)
+                //如果map的值
                 resize();
             for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
                 K key = e.getKey();
@@ -605,6 +679,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
     }
+
+
+    /**
+     *  返回MAP中的KEYVALUE的数字
+     *
+     * @return the number of key-value mappings in this map
+     */
 
     /**
      * Returns the number of key-value mappings in this map.
@@ -616,6 +697,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 返回TRUE，如果这个集合没有KEY VALUE的映射
+     * Returns <tt>true</tt> if this map contains no key-value mappings.
+     *
+     * @return <tt>true</tt>      * 返回TRUE，如果这个集合没有KEY VALUE的映射
+     */
+
+    /**
      * Returns <tt>true</tt> if this map contains no key-value mappings.
      *
      * @return <tt>true</tt> if this map contains no key-value mappings
@@ -623,6 +711,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     public boolean isEmpty() {
         return size == 0;
     }
+
+
+    /**
+     * 返回指定键映射到的值，如果此映射不包含该键的映射，则返回{@code null}。
+     *  <p>更正式地说，如果此映射包含从键{@code k}到值{@code v}的映射，
+     *  使得{@code（key==null？k==null:key.equals（k））
+     * 然后该方法返回{@code v} 否则返回{@code null}
+     * （最多可以有一个这样的映射。）
+     * <p>返回值{@code null}不一定表示映射不包含键的映射；
+     * 映射也可能显式地将密钥映射到{@code null}.
+     *   {@link#containsKey containsKey}操作可用于区分这两种情况
+     *
+     * @see #put(Object, Object)
+     */
 
     /**
      * Returns the value to which the specified key is mapped,
@@ -642,11 +744,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @see #put(Object, Object)
      */
     public V get(Object key) {
+        //获取节点值
         Node<K,V> e;
         return (e = getNode(hash(key), key)) == null ? null : e.value;
+
     }
 
     /**
+     * 实现映射。Map.get 相关的方法
      * Implements Map.get and related methods.
      *
      * @param hash hash for key
@@ -654,20 +759,29 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return the node, or null if none
      */
     final Node<K,V> getNode(int hash, Object key) {
+        //获取节点，先HASH计算找到第一个查询到映射出来的MAP节点
+        //    如果第一个节点通过hash等值和KEY等值算到是该节点直接返回
+        //    要不然就从第一个节点一直往后查询节点直到查询出来。
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (first = tab[(n - 1) & hash]) != null) {
+            //table 表中不为空，有容量值，并计算到第一个table的node也不为空
             if (first.hash == hash && // always check first node
                 ((k = first.key) == key || (key != null && key.equals(k))))
+                //如果第一个位置的hash等于当前hash值，并且第一个node的KEY也等于对当前KEY，KEY 不为空。就直接返回第一个
                 return first;
             if ((e = first.next) != null) {
+                //如果查询到的元素下一个节点不为空就继续查询。
                 if (first instanceof TreeNode)
+                    //如果是树形结构节点实例。直接返回树形节点获取的返回值，
                     return ((TreeNode<K,V>)first).getTreeNode(hash, key);
                 do {
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
                         return e;
                 } while ((e = e.next) != null);
+                // 要不然就从第一个节点一直往后遍历，如果HSAH值和节点HASH一样，key一样，和当前KEY一样， 并且KEY不为空。那么就返回节点
             }
         }
         return null;
@@ -742,7 +856,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         //判断当前状态是否为空，如果为空重新计算容量，
         //如果计算出的hash值的数组位置为空，在该位置新建一个节点即可。
         //如果在该位置有冲突
-        //   如果hash相同，key也相同，那么可以判断为同一份节点，直接替换
+        //   如果hash相同，key也相同，那么可以判断为同一份节点，直接替换（KEY具有唯一性）
         //   如果hash计算出来的节点是树状节点实例，那么调用putTreeVal增加树状节点
         //   其他情况就是在尾部增加新节点，如果达到TREEIFY_THRESHOLD(8)阈值，那么会调整树状结构的节点。
         //   加入map之后，根据onlyIfAbsent更改新值返回
@@ -764,8 +878,9 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 //P的HASH值等于当前hash值，(P的key赋值为K )并且K等于KEY 或者 key不为空，且key等于K值。
                 //PUT节点的HASH值等于传入的hash值，或者KEY相等且不为空。
+                //keyhash值对比相同， KEY也相同通过EQUALS  对比，说明KEY相同，的话直接替换，保持KEY具有唯一性。
                 e = p;
-                //P赋值为E
+                //直接替换
             else if (p instanceof TreeNode)
                 //如果P是TREENODE的相关实例。
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
@@ -788,6 +903,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
                         //PUT节点的HASH值等于传入的hash值，或者KEY相等且不为空。
+                        //key的hash值对比相同， KEY也相同通过EQUALS  对比，说明KEY相同。
                         break;
                         //跳出当前循环
                     p = e;
@@ -984,6 +1100,17 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 hd.treeify(tab);
         }
     }
+
+
+
+    /**
+     /**
+     将指定映射中的所有映射复制到此映射。
+     这些映射将替换此映射用于的所有映射
+     指定映射中当前的任何键。
+     @要存储在此映射中的参数m映射
+     @如果指定的映射为null，则引发NullPointerException
+     */
 
     /**
      * Copies all of the mappings from the specified map to this map.
@@ -1225,36 +1352,48 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         public final Iterator<Map.Entry<K,V>> iterator() {
             return new EntryIterator();
         }
+
         public final boolean contains(Object o) {
             if (!(o instanceof Map.Entry))
+                //判断对象是否是MAPENTRY的实例，如果不是，返回FALSE
                 return false;
             Map.Entry<?,?> e = (Map.Entry<?,?>) o;
             Object key = e.getKey();
+            //获取KEY
             Node<K,V> candidate = getNode(hash(key), key);
+            // key hash 根据KEY获取节点。
             return candidate != null && candidate.equals(e);
+            //不为空，并且获取得到节点为TRUE
         }
         public final boolean remove(Object o) {
             if (o instanceof Map.Entry) {
+                //如果O是Map.Entry的实例。
                 Map.Entry<?,?> e = (Map.Entry<?,?>) o;
                 Object key = e.getKey();
                 Object value = e.getValue();
+                //获取KEY和VALUE,并执行removeNode删除节点方法。
                 return removeNode(hash(key), key, value, true, true) != null;
             }
             return false;
         }
         public final Spliterator<Map.Entry<K,V>> spliterator() {
+            //分离器 调用EntrySpliterator分离
             return new EntrySpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
         public final void forEach(Consumer<? super Map.Entry<K,V>> action) {
+            //遍历。
             Node<K,V>[] tab;
             if (action == null)
                 throw new NullPointerException();
+            //判空操作
             if (size > 0 && (tab = table) != null) {
+                //非空。
                 int mc = modCount;
                 for (int i = 0; i < tab.length; ++i) {
                     for (Node<K,V> e = tab[i]; e != null; e = e.next)
                         action.accept(e);
                 }
+                //循环遍历所有节点。
                 if (modCount != mc)
                     throw new ConcurrentModificationException();
             }
