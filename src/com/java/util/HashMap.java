@@ -287,6 +287,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int UNTREEIFY_THRESHOLD = 6;
 
+
+
+    /**
+     * 存储箱可树化的最小表容量。（否则，如果bin中的节点太多，则会调整表的大小。
+     * 应至少为4*TreeFiy_阈值，以避免调整大小和树化阈值之间的冲突。
+     */
     /**
      * The smallest table capacity for which bins may be treeified.
      * (Otherwise the table is resized if too many nodes in a bin.)
@@ -608,6 +614,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 用指定的初始容量和默认负载系数（0.75）构造一个空的<tt>HashMap</tt>。
+     *
+     * @param  initialCapacity 初始容量。
+     * @throws IllegalArgumentException if the initial capacity is negative.如果初始容量为负。
+     */
+    /**
      * Constructs an empty <tt>HashMap</tt> with the specified initial
      * capacity and the default load factor (0.75).
      *
@@ -619,12 +631,24 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 用默认初始容量（16）和默认负载系数（0.75）构造一个空的<tt>HashMap</tt>。
+     */
+
+    /**
      * Constructs an empty <tt>HashMap</tt> with the default initial capacity
      * (16) and the default load factor (0.75).
      */
     public HashMap() {
         this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
     }
+
+
+    /**
+     * 使用与指定的<tt>映射相同的映射构造新的<tt>HashMap</tt>。
+     * 创建的<tt>HashMap</tt>具有默认负载因子（0.75）和足够的初始容量，以将映射保存在指定的<tt>Map</tt>中。
+     * @param   m 要在此映射中放置其映射的映射
+     * @throws  NullPointerException 如果指定的映射为空
+     */
 
     /**
      * Constructs a new <tt>HashMap</tt> with the same mappings as the
@@ -636,6 +660,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @throws  NullPointerException if the specified map is null
      */
     public HashMap(Map<? extends K, ? extends V> m) {
+        //使用默认加载因子，然后调用放置putMapEntries
         this.loadFactor = DEFAULT_LOAD_FACTOR;
         putMapEntries(m, false);
     }
@@ -654,6 +679,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * true (relayed to method afterNodeInsertion).
      */
     final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
+        //
         int s = m.size();
         //传输进来的MAP赋值容量大小
         if (s > 0) {
@@ -670,12 +696,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     threshold = tableSizeFor(t);
             }
             else if (s > threshold)
-                //如果map的值
+                //如果map的容量大于阈值。重新设置容量。
                 resize();
             for (Map.Entry<? extends K, ? extends V> e : m.entrySet()) {
                 K key = e.getKey();
                 V value = e.getValue();
                 putVal(hash(key), key, value, false, evict);
+                //循环设置KEY VALUE
             }
         }
     }
@@ -1076,6 +1103,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return newTab;
     }
 
+
+    /**
+     * 替换给定散列的索引处bin中的所有链接节点，除非表太小，在这种情况下改为调整大小。
+     */
     /**
      * Replaces all linked nodes in bin at index for given hash unless
      * table is too small, in which case resizes instead.
@@ -1083,8 +1114,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final void treeifyBin(Node<K,V>[] tab, int hash) {
         int n, index; Node<K,V> e;
         if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
+            //table 为空，或者 表长度小于 存储箱可树化的最小表容量
             resize();
+            //重新计算容量。
         else if ((e = tab[index = (n - 1) & hash]) != null) {
+            //计算HASH值获取节点，不为空。
             TreeNode<K,V> hd = null, tl = null;
             do {
                 TreeNode<K,V> p = replacementTreeNode(e, null);
@@ -1096,6 +1130,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 }
                 tl = p;
             } while ((e = e.next) != null);
+            //循环查找该节点后所有链子中的节点，替换成树形节点。
             if ((tab[index] = hd) != null)
                 hd.treeify(tab);
         }
@@ -1121,6 +1156,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @throws NullPointerException if the specified map is null
      */
     public void putAll(Map<? extends K, ? extends V> m) {
+        //设置MAP关系到集合中,旧有的和新添加的共存.
         putMapEntries(m, true);
     }
 
@@ -1190,6 +1226,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return null;
     }
 
+
+    /**
+     * 从此映射中删除所有映射。
+     * 此调用返回后，映射将为空。
+     */
+
     /**
      * Removes all of the mappings from this map.
      * The map will be empty after this call returns.
@@ -1197,10 +1239,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     public void clear() {
         Node<K,V>[] tab;
         modCount++;
+        //添加结果加1
         if ((tab = table) != null && size > 0) {
+            //table不为空，并且容量大于0
             size = 0;
+            //将容量设置为0
             for (int i = 0; i < tab.length; ++i)
                 tab[i] = null;
+            //循环设置所有MAP的位置都设置为NULL
         }
     }
 
@@ -1420,6 +1466,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
+        //根据KEY找到计算HASH找到相关位置，并且检验旧值，找到节点，如果节点不为空，就替换value为新值，不为空返回TRUE 为空，返回false
+
         Node<K,V> e; V v;
         if ((e = getNode(hash(key), key)) != null &&
             ((v = e.value) == oldValue || (v != null && v.equals(oldValue)))) {
@@ -1432,6 +1480,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     @Override
     public V replace(K key, V value) {
+        //根据KEY找到计算HASH找到相关位置的节点如果不为空，就替换value值并返回值。
         Node<K,V> e;
         if ((e = getNode(hash(key), key)) != null) {
             V oldValue = e.value;
@@ -1447,6 +1496,15 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                              Function<? super K, ? extends V> mappingFunction) {
         if (mappingFunction == null)
             throw new NullPointerException();
+        //空检查
+        // 容量大于阈值 或者table为空。table长度为0 N为重新计算容量长度。
+        //获取第一个节点，如果是树状节点，就将OLD获取树状节点。
+        //否则循环，找到HASH相同kEY相同的节点。
+        //如果有旧有节点的VALUE直接返回旧有值。
+        //如果没有旧有的节点的value，调用函数式接口的计算终止赋值代替。
+        //如果是普通节点替换，如果是树形节点有值就替换树形节点，要不然就生成新的节点，重新树形化。
+
+
         int hash = hash(key);
         Node<K,V>[] tab; Node<K,V> first; int n, i;
         int binCount = 0;
@@ -1454,6 +1512,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V> old = null;
         if (size > threshold || (tab = table) == null ||
             (n = tab.length) == 0)
+            //容量大于阈值 或者table为空。table长度为0
             n = (tab = resize()).length;
         if ((first = tab[i = (n - 1) & hash]) != null) {
             if (first instanceof TreeNode)
@@ -1500,6 +1559,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                               BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         if (remappingFunction == null)
             throw new NullPointerException();
+        //空检查
+        //如果 key 对应的 value 不存在，删除这个节点，返回 null，如果存在，则返回通过 remappingFunction 重新计算后的值。
         Node<K,V> e; V oldValue;
         int hash = hash(key);
         if ((e = getNode(hash, key)) != null &&
@@ -1521,17 +1582,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         if (remappingFunction == null)
             throw new NullPointerException();
+//       //检验空指针。
         int hash = hash(key);
+        //计算KEY的hash
         Node<K,V>[] tab; Node<K,V> first; int n, i;
         int binCount = 0;
         TreeNode<K,V> t = null;
         Node<K,V> old = null;
         if (size > threshold || (tab = table) == null ||
             (n = tab.length) == 0)
+            //如果map容量大于阈值，或者table为空，或者table长度为0,n的长度等于重新计算容量后的长度。
             n = (tab = resize()).length;
         if ((first = tab[i = (n - 1) & hash]) != null) {
+            //赋值first第一个根据hash查到的节点如果不为空、
             if (first instanceof TreeNode)
                 old = (t = (TreeNode<K,V>)first).getTreeNode(hash, key);
+            //如果是树状结构，直接获取树状结构节点。
             else {
                 Node<K,V> e = first; K k;
                 do {
@@ -1542,30 +1608,42 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     }
                     ++binCount;
                 } while ((e = e.next) != null);
+                //循环获取，知道查询到hash相同，key相同的节点。
             }
         }
         V oldValue = (old == null) ? null : old.value;
+        //旧有节点如果为空就旧有值就为空，要不然就是OLD的值。
         V v = remappingFunction.apply(key, oldValue);
+        //要不然就调用函数式接口，将相关KEYVALUE传参操作方法。。
+        //V是通过方法计算出来后的值。
         if (old != null) {
+            //如果旧有值不为空
             if (v != null) {
+                //v也不为空。。
                 old.value = v;
                 afterNodeAccess(old);
             }
             else
                 removeNode(hash, key, null, false, true);
+            //否则就删除节点。
         }
         else if (v != null) {
+            //如果V不为空。
             if (t != null)
                 t.putTreeVal(this, tab, hash, key, v);
+                //如果树状节点不为空，赋值树状节点的值将新的V赋值进去
             else {
                 tab[i] = newNode(hash, key, v, first);
+                //在i节点添加新节点新的V赋值进去
                 if (binCount >= TREEIFY_THRESHOLD - 1)
                     treeifyBin(tab, hash);
+                //箱子数量到树形阈值8的时候，开始转化树形节点
             }
             ++modCount;
             ++size;
             afterNodeInsertion(true);
         }
+
         return v;
     }
 
@@ -1633,19 +1711,25 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V>[] tab;
         if (action == null)
             throw new NullPointerException();
+        //如果函数式接口为空，空指针异常。
         if (size > 0 && (tab = table) != null) {
+            //如果容量大于0，table不为空。
             int mc = modCount;
+            //结构修改至赋值
             for (int i = 0; i < tab.length; ++i) {
                 for (Node<K,V> e = tab[i]; e != null; e = e.next)
                     action.accept(e.key, e.value);
+                //循环遍历，让他们接受两个参数，KEY VALUE
             }
             if (modCount != mc)
                 throw new ConcurrentModificationException();
+            //如果结构修改数不等MC抛出异常。
         }
     }
 
     @Override
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        //接受函数式编程接口，使用函数式编程，使得函数式编程循环，操作或者可以替换相应的KEY 或者VALUE值
         Node<K,V>[] tab;
         if (function == null)
             throw new NullPointerException();
