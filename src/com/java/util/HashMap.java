@@ -1747,6 +1747,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /* ------------------------------------------------------------ */
     // Cloning and serialization
+    //克隆和序列化
+
+    /**
+     *返回HashMap实例的浅层副本：不会克隆键和值本身。
+     *
+     * @return a shallow copy of this map
+     */
 
     /**
      * Returns a shallow copy of this <tt>HashMap</tt> instance: the keys and
@@ -1765,17 +1772,31 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             throw new InternalError(e);
         }
         result.reinitialize();
+        //重新初始化状态。
         result.putMapEntries(this, false);
+        //放置MAP到result中。
         return result;
     }
 
     // These methods are also used when serializing HashSets
+    //序列化哈希集时也使用这些方法
     final float loadFactor() { return loadFactor; }
+
     final int capacity() {
         return (table != null) ? table.length :
-            (threshold > 0) ? threshold :
-            DEFAULT_INITIAL_CAPACITY;
+                (threshold > 0) ? threshold :
+                        DEFAULT_INITIAL_CAPACITY;
+        //如果表为空，返回table长度0
+        //如果表不为空、 阈值大于0，返回当前阈值，否则是默认初始化容量。
     }
+
+    /**
+     * 将<tt>HashMap</tt>实例的状态保存到流中（即序列化它）。
+     *
+     * @serialData 发出HashMap的<i>容量（bucket数组的长度）（int），
+     * 然后是<i>大小（int，键值映射的数量），然后是每个键值映射的键（Object）和值（Object）。
+     * 键值映射不按特定顺序发出。
+     */
 
     /**
      * Save the state of the <tt>HashMap</tt> instance to a stream (i.e.,
@@ -1798,6 +1819,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         internalWriteEntries(s);
     }
 
+
+    /**
+     * 从流中重新构造此映射（即，反序列化它）。
+     * @param s the stream
+     * @throws ClassNotFoundException 如果找不到序列化对象的类
+     * @throws IOException  如果发生I/O错误
+     */
+
     /**
      * Reconstitutes this map from a stream (that is, deserializes it).
      * @param s the stream
@@ -1806,40 +1835,55 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @throws IOException if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
+        //反序列化读取hashmap.
         throws IOException, ClassNotFoundException {
         // Read in the threshold (ignored), loadfactor, and any hidden stuff
+        //读取阈值（忽略）、加载因子和任何隐藏内容
         s.defaultReadObject();
         reinitialize();
+        //重新加载初始化配置。
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new InvalidObjectException("Illegal load factor: " +
                                              loadFactor);
-        s.readInt();                // Read and ignore number of buckets
-        int mappings = s.readInt(); // Read number of mappings (size)
-        if (mappings < 0)
+        //加载银子小于等于0或者 加载银子不是浮点型，抛出异常 。
+
+        s.readInt();                // Read and ignore number of buckets //读取并忽略存储桶数
+        int mappings = s.readInt(); // Read number of mappings (size) //读取映射数（大小）
+        if (mappings < 0)    //如果映射大小小于0
             throw new InvalidObjectException("Illegal mappings count: " +
                                              mappings);
-        else if (mappings > 0) { // (if zero, use defaults)
+        //  抛出异常。
+        else if (mappings > 0) { // (if zero, use defaults)  （如果为零，则使用默认值）
             // Size the table using given load factor only if within
-            // range of 0.25...4.0
+            // 仅当在以下范围内时，才使用给定的负载系数调整表的大小
+            // 范围为0.25。。。4
             float lf = Math.min(Math.max(0.25f, loadFactor), 4.0f);
+             //  将0.25和加载因子比较较大值。大值和4相比，谁小就是LF
             float fc = (float)mappings / lf + 1.0f;
+            //  fc值 是映射值除lf 加上1。
             int cap = ((fc < DEFAULT_INITIAL_CAPACITY) ?
                        DEFAULT_INITIAL_CAPACITY :
                        (fc >= MAXIMUM_CAPACITY) ?
                        MAXIMUM_CAPACITY :
                        tableSizeFor((int)fc));
+            //如果FC小于默认容量那么容量就是默认容量。否则就是—— fc 大于等于 最大容量 就是最大容量，要不然就是大于当前容量的最小二次幂数。
             float ft = (float)cap * lf;
+            //ft  等于（二次幂）容量乘以加载因子比较后的值。
             threshold = ((cap < MAXIMUM_CAPACITY && ft < MAXIMUM_CAPACITY) ?
                          (int)ft : Integer.MAX_VALUE);
+            //阈值 等于  容量小于最大容量，并且 ft小于最大容量值 那就是ft 要么就是最大的integer值。
 
             // Check Map.Entry[].class since it's the nearest public type to
             // what we're actually creating.
+            //检查Map.Entry[].class ，因为它是最接近我们实际创建的公共类型。
             SharedSecrets.getJavaOISAccess().checkArray(s, Map.Entry[].class, cap);
             @SuppressWarnings({"rawtypes","unchecked"})
             Node<K,V>[] tab = (Node<K,V>[])new Node[cap];
+            //
             table = tab;
-
+            //创建一定容量节点数组，赋值table。
             // Read the keys and values, and put the mappings in the HashMap
+            //读取键和值，并将映射放入HashMap中
             for (int i = 0; i < mappings; i++) {
                 @SuppressWarnings("unchecked")
                     K key = (K) s.readObject();
@@ -1847,6 +1891,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     V value = (V) s.readObject();
                 putVal(hash(key), key, value, false, false);
             }
+            //循环mapping读取KEY和VALUE，并放到hashmap中。
         }
     }
 
@@ -1854,12 +1899,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     // iterators
 
     abstract class HashIterator {
-        Node<K,V> next;        // next entry to return
-        Node<K,V> current;     // current entry
-        int expectedModCount;  // for fast-fail
-        int index;             // current slot
+        Node<K,V> next;        // next entry to return 下一个要返回的条目
+        Node<K,V> current;     // current entry  当前条目
+        int expectedModCount;  // for fast-fail 快速失败
+        int index;             // current slot  当前插槽
 
         HashIterator() {
+            //构造方法。
             expectedModCount = modCount;
             Node<K,V>[] t = table;
             current = next = null;
@@ -1867,10 +1913,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             if (t != null && size > 0) { // advance to first entry
                 do {} while (index < t.length && (next = t[index++]) == null);
             }
+            //提前到第一个入口
         }
 
         public final boolean hasNext() {
             return next != null;
+            //下一个循环节点不为空也就是有下一个节点。
         }
 
         final Node<K,V> nextNode() {
@@ -1880,9 +1928,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 throw new ConcurrentModificationException();
             if (e == null)
                 throw new NoSuchElementException();
+
             if ((next = (current = e).next) == null && (t = table) != null) {
                 do {} while (index < t.length && (next = t[index++]) == null);
             }
+            //下一个节点等于NULL，并且table不为空。
+                //直到当前索引小于当前长度，并且下一个节点为空。
+            //否则一直返回下一个节点。
             return e;
         }
 
@@ -1896,6 +1948,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             K key = p.key;
             removeNode(hash(key), key, null, false, false);
             expectedModCount = modCount;
+            //当前值赋值为空，将当前KEY找到并删除节点。将当前结构修改次数同步。
         }
     }
 
@@ -1913,17 +1966,19 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         implements Iterator<Map.Entry<K,V>> {
         public final Map.Entry<K,V> next() { return nextNode(); }
     }
+    //key  value  entry  hash 都实现了 Iterator，就可以根据方法遍历。KEY VALUE  entry  hash
 
     /* ------------------------------------------------------------ */
     // spliterators
 
     static class HashMapSpliterator<K,V> {
         final HashMap<K,V> map;
-        Node<K,V> current;          // current node
-        int index;                  // current index, modified on advance/split
-        int fence;                  // one past last index
-        int est;                    // size estimate
-        int expectedModCount;       // for comodification checks
+        Node<K,V> current;          // current node 当前节点
+        int index;                  // current index, modified on advance/split 当前索引，在提前/拆分时修改
+        int fence;                  // one past last index 最后一个索引
+        int est;                    // size estimate  规模估算
+        int expectedModCount;       // for comodification checks 用于共修改检查
+
 
         HashMapSpliterator(HashMap<K,V> m, int origin,
                            int fence, int est,
@@ -1935,7 +1990,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             this.expectedModCount = expectedModCount;
         }
 
-        final int getFence() { // initialize fence and size on first use
+        final int getFence() { // initialize fence and size on first use  第一次使用时初始化围栏和大小
+
             int hi;
             if ((hi = fence) < 0) {
                 HashMap<K,V> m = map;
@@ -1944,12 +2000,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 Node<K,V>[] tab = m.table;
                 hi = fence = (tab == null) ? 0 : tab.length;
             }
+            //如果围栏小于0,hashmap大小，和table容量以及围栏长度。
             return hi;
         }
 
         public final long estimateSize() {
             getFence(); // force init
             return (long) est;
+            //估计尺寸。返回HASHMAP大小。
         }
     }
 
@@ -1962,10 +2020,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
 
         public KeySpliterator<K,V> trySplit() {
+            // 这里的分割方法只是把当前迭代器的开始索引和最后索引除以二而已
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
+            // 需要遍历的元素个数 est 也需要除以二
             return (lo >= mid || current != null) ? null :
                 new KeySpliterator<>(map, lo, index = mid, est >>>= 1,
                                         expectedModCount);
+         //尝试分离， 获取围栏，
         }
 
         public void forEachRemaining(Consumer<? super K> action) {
