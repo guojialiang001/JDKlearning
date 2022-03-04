@@ -1160,6 +1160,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         putMapEntries(m, true);
     }
 
+
+    /**
+     *   从该映射中删除指定密钥的映射（如果存在）。
+     *
+     * @param  key key要从映射中删除其映射的密钥
+     * @return 返回与键关联的上一个值，或如果没有键的映射，则为null
+     *         （null返回也可以表示映射
+     *          *以前将NULL与密钥关联。）
+     */
+
+
+
     /**
      * Removes the mapping for the specified key from this map if present.
      *
@@ -1169,11 +1181,26 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
+
+
     public V remove(Object key) {
         Node<K,V> e;
         return (e = removeNode(hash(key), key, null, false, true)) == null ?
             null : e.value;
     }
+
+
+    /**
+     *
+     *实现映射移除和相关方法。
+     * @param hash hash for key
+     * @param key the key
+     * @param value  如果匹配值，则匹配的值，否则忽略
+     * @param matchValue 如果为true，则仅在值相等时删除
+     * @param movable 如果为false，则在删除时不要移动其他节点
+     * @return the node, or null if none
+     */
+
 
     /**
      * Implements Map.remove and related methods.
@@ -1188,13 +1215,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final Node<K,V> removeNode(int hash, Object key, Object value,
                                boolean matchValue, boolean movable) {
         Node<K,V>[] tab; Node<K,V> p; int n, index;
+        //如果当前MAP表不为空，并且长度大于0 并且末尾元素不为空。
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (p = tab[index = (n - 1) & hash]) != null) {
+
             Node<K,V> node = null, e; K k; V v;
+            //如果 末尾元素HASH的值等于传输的HASH值,并且KEY值地址相等，字符也相等。那么就让node节点等于P
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 node = p;
+            //那么P链表中的NEXT节点不为空
             else if ((e = p.next) != null) {
+                //如果P 是树类型节点 以树形节点转化。循环获取（如果hash相等，KEY地址相等，KEY值相等那就将该节点变成NODE）否则一直获取链表后面进行判断。
                 if (p instanceof TreeNode)
                     node = ((TreeNode<K,V>)p).getTreeNode(hash, key);
                 else {
@@ -1209,16 +1241,20 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     } while ((e = e.next) != null);
                 }
             }
+            //如果node不为空，并且， （关联VALUE 为FALSE  或者 节点的值等于value 或者   （ value 不为空   并且value 等于V） ）
             if (node != null && (!matchValue || (v = node.value) == value ||
                                  (value != null && value.equals(v)))) {
+                //如果  是树形节点直接调用树形节点删除方法  如果 NODE 等于P节点，直接 将该值进行链表替换。   否则 不重合，直接将链表替换。
                 if (node instanceof TreeNode)
                     ((TreeNode<K,V>)node).removeTreeNode(this, tab, movable);
                 else if (node == p)
                     tab[index] = node.next;
                 else
                     p.next = node.next;
+                //增加操作COUNT  减少一个大小。
                 ++modCount;
                 --size;
+                //调用函数  并返回当前节点。
                 afterNodeRemoval(node);
                 return node;
             }
@@ -1251,6 +1287,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * 如果此映射将一个或多个键映射到指定值，则返回true。
+     *
+     * @param value 要测试其在该地图中的存在的值
+     * @return  如果此映射将一个或多个键映射到指定值，则为true
+     */
+
+    /**
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value.
      *
@@ -1260,6 +1303,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     public boolean containsValue(Object value) {
         Node<K,V>[] tab; V v;
+        //如果MAP 数组不为空 ，元素大于0
+        //循环   数组
+        //循环   数组元素 的链表， （e不为空）
+        //如果value的值等于e的值，  或者  value 不为空，  value值等于e的值  那么返回TRUE  证明在 循环中包含该VALUE
         if ((tab = table) != null && size > 0) {
             for (int i = 0; i < tab.length; ++i) {
                 for (Node<K,V> e = tab[i]; e != null; e = e.next) {
@@ -1271,6 +1318,25 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
         return false;
     }
+
+
+
+    /**
+     * 返回此映射中包含的键的{@link Set}视图。
+     * *该集合由MAP支持，因此对MAP的更改不受限制
+     * 反映在场景中，反之亦然。如果MAP被修改了
+     * 当对集合进行迭代时（通过 迭代器自己的 remove 操作）的结果
+     *
+     * 迭代没有定义。该套件支持元素移除，
+     *
+     * 通过
+     * Iterator.remove，Set.remove，
+     * removeAll，retainAll，以及 clear
+     * 操作。它不支持add addAll操作。
+     *
+     * @return 此MAP中包含的key的集合视图
+     */
+
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.
@@ -1288,6 +1354,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @return a set view of the keys contained in this map
      */
     public Set<K> keySet() {
+        //返回KEYSET如果没有新建，最后返回，
         Set<K> ks = keySet;
         if (ks == null) {
             ks = new KeySet();
@@ -1309,8 +1376,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
         public final void forEach(Consumer<? super K> action) {
             Node<K,V>[] tab;
+            //空指针
             if (action == null)
                 throw new NullPointerException();
+            //如果长度大于0 并且 数组不为空。   循环数组长度
+            // 循环  数组的链表。  接受函数式编程。
             if (size > 0 && (tab = table) != null) {
                 int mc = modCount;
                 for (int i = 0; i < tab.length; ++i) {
@@ -1322,6 +1392,25 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
     }
+
+
+
+
+
+
+    /**
+     *返回此映射中包含的值的{@link Collection}视图。
+     * 集合由映射支持，因此对映射的更改是
+     * 反映在收藏中，反之亦然。如果地图是
+     * 在对集合进行迭代时修改
+     * （除了通过迭代器自己的remove操作），
+     * 迭代的结果尚未定义。藏品
+     * 支持删除元素，从而删除相应的
+     * 通过Iterator.remove，
+     * Collection.remove，removeAll，
+     * retainAll和clear操作。事实并非如此
+     * 支持add或addAll操作。
+     */
 
     /**
      * Returns a {@link Collection} view of the values contained in this map.
@@ -1356,6 +1445,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             return new ValueSpliterator<>(HashMap.this, 0, -1, 0, 0);
         }
         public final void forEach(Consumer<? super V> action) {
+            // 如果长度大于0 并且 数组不为空。   循环数组长度
+            // 循环  数组的链表。  接受函数式编程。
             Node<K,V>[] tab;
             if (action == null)
                 throw new NullPointerException();
@@ -1370,6 +1461,24 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             }
         }
     }
+
+
+
+
+    /**
+     返回此映射中包含的值的{@link Collection}视图。
+     集合由映射支持，因此对映射的更改是
+     反映在收藏中，反之亦然。如果地图是
+     在对集合进行迭代时修改
+     （除了通过迭代器自己的remove操作），
+     迭代的结果尚未定义。藏品
+     支持删除元素，从而删除相应的
+     通过Iterator.remove，
+     Set.remove，removeAll，
+     retainAll和clear操作。事实并非如此
+     支持add或addAll操作。
+     * @return 返回此映射中包含的值的视图
+     */
 
     /**
      * Returns a {@link Set} view of the mappings contained in this map.
