@@ -1468,7 +1468,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      返回此映射中包含的值的{@link Collection}视图。
      集合由映射支持，因此对映射的更改是
-     反映在收藏中，反之亦然。如果地图是
+     反映在收藏中，反之亦然。如果MAP是
      在对集合进行迭代时修改
      （除了通过迭代器自己的remove操作），
      迭代的结果尚未定义。藏品
@@ -1756,21 +1756,35 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return v;
     }
 
+
+    /**
+     * 合并
+     * @param key
+     * @param value
+     * @param remappingFunction
+     * @return
+     */
     @Override
-    public V merge(K key, V value,
+    public V merge (K key, V value,
                    BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        //空指针校验，
         if (value == null)
             throw new NullPointerException();
         if (remappingFunction == null)
             throw new NullPointerException();
+        //计算hash 初始化。
         int hash = hash(key);
         Node<K,V>[] tab; Node<K,V> first; int n, i;
         int binCount = 0;
         TreeNode<K,V> t = null;
         Node<K,V> old = null;
+        //如果容量大于阈值或者table为空或者长度为0。那么n数量等于重新计算容量后的长度。
         if (size > threshold || (tab = table) == null ||
             (n = tab.length) == 0)
             n = (tab = resize()).length;
+        //如果第一个元素末尾元素有hash不为空，
+            //第一个节点为树形节点实例，那么获取树形节点。
+            //否则 （第一个节点hash值等于计算hash，并且 k的值等于节点的 KEY值，或者KEY 值相等。）开始从链表往后查节点。如果查到将旧有的值赋值给
         if ((first = tab[i = (n - 1) & hash]) != null) {
             if (first instanceof TreeNode)
                 old = (t = (TreeNode<K,V>)first).getTreeNode(hash, key);
@@ -1786,6 +1800,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 } while ((e = e.next) != null);
             }
         }
+         //如果找到OLD 值，不等于空，那么走函数式编程。
+        // 找不到value值， 赋值value
+
+        //如果v不为空，v赋值oldvalue回调函数。
+        //否则删除节点。最后返回v
         if (old != null) {
             V v;
             if (old.value != null)
@@ -1800,6 +1819,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 removeNode(hash, key, null, false, true);
             return v;
         }
+        //value不为空
+//           //t不为空，T设置树形结构，否则新建节点，如果大于等于阈值，那么转化树形结构。
+        //修改节点数加一。容量加一。尾调用。
+        //最后返回value
         if (value != null) {
             if (t != null)
                 t.putTreeVal(this, tab, hash, key, value);
