@@ -426,10 +426,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static Class<?> comparableClassFor(Object x) {
         if (x instanceof Comparable) {
+            //如果是Comparable 实例
             Class<?> c; Type[] ts, as; Type t; ParameterizedType p;
             if ((c = x.getClass()) == String.class) // bypass checks
                 return c;
+                    //如果是字符串，直接返回C
             if ((ts = c.getGenericInterfaces()) != null) {
+                //由此对象表示的类或接口实现的接口不存在
+                //那么循环数组， 获取参数类型和真实类型参数不为空。 参数类型为Comparable 参数只有一个，第一个参数为C那么就可以返回。
                 for (int i = 0; i < ts.length; ++i) {
                     if (((t = ts[i]) instanceof ParameterizedType) &&
                         ((p = (ParameterizedType)t).getRawType() ==
