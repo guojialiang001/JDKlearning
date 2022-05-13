@@ -37,6 +37,9 @@ import java.util.function.Function;
 import sun.misc.SharedSecrets;
 
 /**
+ * hash表依赖map接口，这个实现提供了所有的map操作的配置，并且允许null值和null键,(hashmap类大致相当于hashtable，除了它这个非同步并且允许空值。）
+ *  这个类没有保证map的顺序。特指它没有保证顺序，这将保持不变。
+ *
  * Hash table based implementation of the <tt>Map</tt> interface.  This
  * implementation provides all of the optional map operations, and permits
  * <tt>null</tt> values and the <tt>null</tt> key.  (The <tt>HashMap</tt>
@@ -44,6 +47,13 @@ import sun.misc.SharedSecrets;
  * unsynchronized and permits nulls.)  This class makes no guarantees as to
  * the order of the map; in particular, it does not guarantee that the order
  * will remain constant over time.
+ *
+ *
+ * 对于主要操作（get 和put）它实现提供了常量时间的表现。假设这个hash函数适当得分散存储在桶中，
+ * 对集合视图的迭代时间需要与HashMap的“容量”成比例
+ * 实例（存储桶的数量）加上其大小（键值映射的数量）
+ * 因此，如果遍历的表现很重要,不要设置初始容量太高（或者负载系数太低）,这个是非常重要的
+ *
  *
  * <p>This implementation provides constant-time performance for the basic
  * operations (<tt>get</tt> and <tt>put</tt>), assuming the hash function
@@ -53,6 +63,13 @@ import sun.misc.SharedSecrets;
  * of key-value mappings).  Thus, it's very important not to set the initial
  * capacity too high (or the load factor too low) if iteration performance is
  * important.
+ *
+ *
+ ** 一个hashmap的实例有两个参数影响它的表现，初始化容量，和负载因子，容量是在hash表中的桶的数量，
+ *  并且初始容量仅仅是hash表创建的容量。 负载因子是hashmap在它的容量自动增长之前，hash表被允许填满的测量值。
+ *  在hash表entry的数量超过负载因子和当前容量，hash表会被重新rehash，（这是 重建内部数据结构）
+ *  因此，哈希表的存储桶数大约是当前存储桶数的两倍。
+ *
  *
  * <p>An instance of <tt>HashMap</tt> has two parameters that affect its
  * performance: <i>initial capacity</i> and <i>load factor</i>.  The
@@ -65,6 +82,12 @@ import sun.misc.SharedSecrets;
  * structures are rebuilt) so that the hash table has approximately twice the
  * number of buckets.
  *
+ *   作为一个常用的规则，默认的负载因子0。75 提供了一个好的时间和空间成本之间的权衡
+ *   更高的价值 减少了空间，较高的值会减少空间开销，但会增加查找成本。（反射在大多数的hashmap类的操作）包括 get和put 方法
+ *   map实例的预期数量和它的负载因子 在设置其初始容量时应考虑，以尽量减少rehash的次数
+ *   如果初始容量大于最大入口数除以负载系数，再也不会发生任何rehash操作
+ *
+
  * <p>As a general rule, the default load factor (.75) offers a good
  * tradeoff between time and space costs.  Higher values decrease the
  * space overhead but increase the lookup cost (reflected in most of
@@ -76,6 +99,12 @@ import sun.misc.SharedSecrets;
  * maximum number of entries divided by the load factor, no rehash
  * operations will ever occur.
  *
+ *efficiently
+ *
+ *如果许多的映射被存储在hashmap的实例中， 一个十分大的容量会让存储映射的效率要比让它根据需要自动rehash来增长表更高 。
+ * 备注：使用许多的key用同样的hashcode 是对于任何hash表当然都缓慢低效。
+ *为了减轻影响，当keys都 Comparable，这个类可以使键之间的比较顺序有助于打破联系
+ *
  * <p>If many mappings are to be stored in a <tt>HashMap</tt>
  * instance, creating it with a sufficiently large capacity will allow
  * the mappings to be stored more efficiently than letting it perform
@@ -84,6 +113,13 @@ import sun.misc.SharedSecrets;
  * down performance of any hash table. To ameliorate impact, when keys
  * are {@link Comparable}, this class may use comparison order among
  * keys to help break ties.
+ *
+ *
+ * 备注 这个实现是不同步的，
+ * 如果多线程同时进入一个hashmap ，并且至少其中一个线程在map的结构上修改，
+ * 它一个是在外部同步的（一个结构的修改是任何的增加或者删除一个或多个映射关系的操作）;
+ * 只是改变这个值关联了一个key 已包含不是结构修改的实例
+ * 这通常是通过在自然封装map的某个对象上进行同步来实现的
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a hash map concurrently, and at least one of
@@ -94,11 +130,21 @@ import sun.misc.SharedSecrets;
  * structural modification.)  This is typically accomplished by
  * synchronizing on some object that naturally encapsulates the map.
  *
+ *
+ * 如果没有这个对象存在，这个MAP应该被{@link Collections#synchronizedMap Collections.synchronizedMap}方法包装起来。
+ * 这个是最好的被创建的操作，去防止意外的非同步进入到这个MAP
+ * Map m = Collections.synchronizedMap(new HashMap(...));
+ *
+ *
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the map:<pre>
  *   Map m = Collections.synchronizedMap(new HashMap(...));</pre>
+ *
+ * 这个类的所有“集合视图方法”返回的迭代器都是fail-fast 的：  如果map在迭代器创建的任何时间后有结构化的修改
+ * 在除了通过迭代器的自己的删除方法的以外的任何方式。迭代器将会抛出一个{@link ConcurrentModificationException}
+ *  因此，面对当前的修改，这个迭代器快速的失败和清空， 而不是冒着武断的风险， 未来不确定时间的非确定性行为
  *
  * <p>The iterators returned by all of this class's "collection view methods"
  * are <i>fail-fast</i>: if the map is structurally modified at any time after
