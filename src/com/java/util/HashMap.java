@@ -155,6 +155,10 @@ import sun.misc.SharedSecrets;
  * arbitrary, non-deterministic behavior at an undetermined time in the
  * future.
  *
+ * 请注意，迭代器的fail fast fast行为不能像现在这样得到保证，普通来说，不可能去做任何强硬的保证出现非同步的当前修改
+ * fail-fast 迭代器 抛出异常ConcurrentModificationException 在一个 尽力而为的基础
+ * 然而， 如果编写一个依赖于此异常的正确性的程序，那将是错误的：迭代器的快速失效行为应该只用于检测bug。
+ *
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
@@ -162,6 +166,9 @@ import sun.misc.SharedSecrets;
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness: <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
+ *
+ * 这个类是一个 <a href="{@docRoot}/../technotes/guides/collections/index.html"> 的成员
+ * Java集合框架。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -187,6 +194,29 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     private static final long serialVersionUID = 362498820763181265L;
 
     /*
+
+        实现备注
+
+       这个map通常 操作作为一个盒子的hash表中，但是当盒子太大，它们被转化成树状物箱
+       每一个结构都像是在treemap一样， 大多数方法尝试去使用普通的箱子，但是
+       替换成 树形节点的方法 是可应用的（只需要检查节点的实例）
+       树形节点的箱子可以像其他一样被遍历和使用但是
+       但另外，在人口过多时支持更快的查找
+       然而由于绝大多数正常使用的箱并没有人口过多,
+       检查树形的存在的箱子可能在表方法的过程中可能会被延迟
+
+       树形的箱子（箱子的元素全都是树形的节点）都通过hashcode主要顺序排列。
+       但是在这个关联上，如果两个元素都是 同样" class c 实现了Comparable<C>"
+       类型然后他们的compareTo方法会被使用于排序上，（我们保守的检查一般的类型通过反射去校验这个看起来方法的可比性）
+       添加树形箱子的复杂性是值得的，在提供 最坏情况O（对数n）操作 当键中的任何一个有去重的哈希或者顺序性
+        因此，当hashCode（）方法返回分布不均匀的值时，意外或恶意使用会导致性能下降
+        和许多key分享一个hashcode一样， 他们的比较能力也是一样长， （如果两个都不使用，与不采取预防措施相比，我们可能会在时间和空间上浪费大约两倍，
+        但已知的唯一案例来自糟糕的用户编程实践，这些实践已经非常缓慢，几乎没有什么区别）
+
+
+
+
+
      * Implementation notes.
      *
      * This map usually acts as a binned (bucketed) hash table, but
@@ -218,6 +248,25 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * programming practices that are already so slow that this makes
      * little difference.)
      *
+
+     因为树形节点都是大约两倍于规则节点。当箱子包含足够多的节点以保证使用（请参见TREEIFY_阈值）我们使用他们
+    并且当他们变得足够小（以助于删除或者重新安排容量）他们被转化回普通的箱，用户的hashcode会均匀良好的分布，
+    树形的箱子很少会被使用，理论上 在随机的hashcode下，频繁的节点在箱子按照泊松分布排列;
+    (http://en.wikipedia.org/wiki/Poisson_distribution) 一个参数大约0.5的平均值，默认的重新排列0.75的阈值，虽然有一个大量的变化，因为重新安排容量，
+    忽略变化， 期待的 list大小的k值 是 (exp(-0.5) * pow(0.5, k) /factorial(k))
+      这个第一个值是
+      * 0:    0.60653066
+     * 1:    0.30326533
+     * 2:    0.07581633
+     * 3:    0.01263606
+     * 4:    0.00157952
+     * 5:    0.00015795
+     * 6:    0.00001316
+     * 7:    0.00000094
+     * 8:    0.00000006
+     更多的： 小于1的 一千万个值。
+
+
      * Because TreeNodes are about twice the size of regular nodes, we
      * use them only when bins contain enough nodes to warrant use
      * (see TREEIFY_THRESHOLD). And when they become too small (due to
@@ -243,11 +292,17 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * 8:    0.00000006
      * more: less than 1 in ten million
      *
+
+        树形箱子的 根节点   是普通的第一个节点， 然而有时候，（当前仅仅在Iterator.remove）
+        根可能在别的地方， 但是可以通过父链接（方法TreeNode.root（））恢复。
+
      * The root of a tree bin is normally its first node.  However,
      * sometimes (currently only upon Iterator.remove), the root might
      * be elsewhere, but can be recovered following parent links
      * (method TreeNode.root()).
      *
+       所有的适用的内部得方法接受一个hashcode  作为一个参数（作为普通的来自公共方法的提供）允许他们去相互调用， 没有重新计算用户的hashcode
+       大多数的内部方法也接受一个TAB参数，当前表是很普遍的，当重新安排容量或者转化的时候。可能是一个新的或者旧的
      * All applicable internal methods accept a hash code as an
      * argument (as normally supplied from a public method), allowing
      * them to call each other without recomputing user hashCodes.
@@ -255,6 +310,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * normally the current table, but may be a new or old one when
      * resizing or converting.
      *
+     当箱子的列表都是树形化的时候，分割或者非树形化，我们都让他们保持在同样相对访问/遍历顺序
+      (i.e., field Node.next) 去更好的保留他的本地性。并且轻微的简单处理分割和遍历 调用iterator.remove
+
+      在插入的时候去使用comparators，通过再平衡的方式，去保持一个全部的顺序，（或者尽可能靠近这里）
+       我们比较类并且标识HASHCODE作为纽带。
+
      * When bin lists are treeified, split, or untreeified, we keep
      * them in the same relative access/traversal order (i.e., field
      * Node.next) to better preserve locality, and to slightly
@@ -264,6 +325,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * rebalancings, we compare classes and identityHashCodes as
      * tie-breakers.
      *
+
+    使用 并且在直接转变上对比 存在的子类LinkedHashMap而言 树形模式是复杂的。
+    有关定义为在插入时调用的钩子方法，请参见下文
+    允许LinkedHashMap内部删除和访问， 否则，它们将保持独立于这些机制
+    （这个也是需要一个集合实例去通过许多可以创建新节点的实用方法）
+    当前的程序像是 SSA基础的编码格式， 在所有曲折的指针操作中，帮助避免别名错误
+
      * The use and transitions among plain vs tree modes is
      * complicated by the existence of subclass LinkedHashMap. See
      * below for hook methods defined to be invoked upon insertion,
