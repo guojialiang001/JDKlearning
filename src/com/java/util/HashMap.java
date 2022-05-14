@@ -2928,41 +2928,45 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
         /* ------------------------------------------------------------ */
         // Red-black tree methods, all adapted from CLR
+        //红黑树方法，全部改编自CLR
+
 
         static <K,V> TreeNode<K,V> rotateLeft(TreeNode<K,V> root,
                                               TreeNode<K,V> p) {
             TreeNode<K,V> r, pp, rl;
-            if (p != null && (r = p.right) != null) {
-                if ((rl = p.right = r.left) != null)
+            //红黑树左旋：父结点被自己的右孩子取代，而自己成为自己的左孩子。（父子节点互换，原父节点为原父节点的右孩子的左孩子 ）
+            if (p != null && (r = p.right) != null) {//P节点的右节点不为空，否则左旋没意义。
+                if ((rl = p.right = r.left) != null) // P节点的左节点不为空， 将P节点的左节点赋值为P节点的右节点
                     rl.parent = p;
-                if ((pp = r.parent = p.parent) == null)
+                if ((pp = r.parent = p.parent) == null) //原根节点就是P，然后根节点不能是红色。
                     (root = r).red = false;
-                else if (pp.left == p)
+                else if (pp.left == p)//p为p的父节点的左孩子节点   p节点的右孩子（r节点）为p的父节点的左孩子
                     pp.left = r;
-                else
+                else          //要不然  p节点的右孩子（r节点）为p的父节点的右孩子
                     pp.right = r;
-                r.left = p;
-                p.parent = r;
+                r.left = p; //r的左孩子为p
+                p.parent = r;//p的父亲为r =>父子节点互换，原父节点为原父节点的右孩子的左孩子
             }
-            return root;
+            return root; //返回根节点
         }
 
         static <K,V> TreeNode<K,V> rotateRight(TreeNode<K,V> root,
                                                TreeNode<K,V> p) {
             TreeNode<K,V> l, pp, lr;
-            if (p != null && (l = p.left) != null) {
-                if ((lr = p.left = l.right) != null)
+            //父结点被自己的左孩子取代，而自己成为自己的右孩子。（父子节点互换，原父节点为原父节点的左孩子的右孩子 ）
+            if (p != null && (l = p.left) != null) {//P节点的左节点不为空，否则右旋没意义。
+                if ((lr = p.left = l.right) != null)// P节点的右节点不为空， 将P节点的右节点赋值为P节点的左节点
                     lr.parent = p;
-                if ((pp = l.parent = p.parent) == null)
+                if ((pp = l.parent = p.parent) == null) //原根节点就是P，然后根节点不能是红色。
                     (root = l).red = false;
-                else if (pp.right == p)
+                else if (pp.right == p) //p为p的父节点的右孩子节点   p节点的左孩子（l节点）为p的父节点的右孩子
                     pp.right = l;
-                else
+                else         //要不然  p节点的左孩子（l节点）为p的父节点的右孩子
                     pp.left = l;
-                l.right = p;
-                p.parent = l;
+                l.right = p; //r的右孩子为p
+                p.parent = l;//p的父亲为l =>父子节点互换，原父节点为原父节点的左孩子的右孩子
             }
-            return root;
+            return root;//返回根节点
         }
 
         static <K,V> TreeNode<K,V> balanceInsertion(TreeNode<K,V> root,
