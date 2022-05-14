@@ -2971,52 +2971,55 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
         static <K,V> TreeNode<K,V> balanceInsertion(TreeNode<K,V> root,
                                                     TreeNode<K,V> x) {
+            //红黑树的插入树后，需要平衡节点。该方法 主要是颜色的平衡。
+
             x.red = true;
             for (TreeNode<K,V> xp, xpp, xppl, xppr;;) {
-                if ((xp = x.parent) == null) {
-                    x.red = false;
+                //每一次循环修改三代颜色，将爷爷强制改成红色，如果爷爷节点为根节点，再修改成黑色节点。
+                if ((xp = x.parent) == null) {//xp为插入节点的父节点。//判断当前插入节点x的父节点是否为空，如果为空 ， 也就是说X为根节点，根节点为黑色。返回根节点。
+                    x.red = false;//设置黑色。返回X节点
                     return x;
                 }
-                else if (!xp.red || (xpp = xp.parent) == null)
-                    return root;
-                if (xp == (xppl = xpp.left)) {
-                    if ((xppr = xpp.right) != null && xppr.red) {
-                        xppr.red = false;
+                else if (!xp.red || (xpp = xp.parent) == null)// 如果（xp为插入节点的父节点。）x的父节点为黑色 或者  xpp=xp的父节点为空。直接返回根节点
+                    return root;//返回根节点
+                if (xp == (xppl = xpp.left)) { //xp等于x的爷爷节点的左孩子
+                    if ((xppr = xpp.right) != null && xppr.red) {//赋值xppr为XPP的右节点 判断不为空，并且XPPR为红色
+                        xppr.red = false; //xppr为黑色，xp为黑色 ,xpp为红色
                         xp.red = false;
                         xpp.red = true;
                         x = xpp;
                     }
-                    else {
-                        if (x == xp.right) {
+                    else {//否则
+                        if (x == xp.right) {//判断X是不是XP的右节点。
                             root = rotateLeft(root, x = xp);
                             xpp = (xp = x.parent) == null ? null : xp.parent;
                         }
-                        if (xp != null) {
-                            xp.red = false;
-                            if (xpp != null) {
+                        if (xp != null) { //如果XP不为空。
+                            xp.red = false; //把XP变成黑色节点
+                            if (xpp != null) { //如果Xpp不为空  xpp变成红色，并把xpp右旋。
                                 xpp.red = true;
                                 root = rotateRight(root, xpp);
                             }
                         }
                     }
                 }
-                else {
-                    if (xppl != null && xppl.red) {
-                        xppl.red = false;
-                        xp.red = false;
-                        xpp.red = true;
-                        x = xpp;
+                else {//xp等于x的爷爷节点的右孩子
+                    if (xppl != null && xppl.red) {//如果左叔叔不为空并且左叔叔为红色
+                        xppl.red = false; // 设置左叔叔为黑色
+                        xp.red = false;  //父节点为黑色。
+                        xpp.red = true;  //爷爷节点为红色
+                        x = xpp; //爷爷作为下一次的孙子，进入下一次循环。
                     }
-                    else {
-                        if (x == xp.left) {
-                            root = rotateRight(root, x = xp);
-                            xpp = (xp = x.parent) == null ? null : xp.parent;
+                    else {//如果左叔叔为空或者左叔叔不为红色。
+                        if (x == xp.left) { //如果x是xp 的左孩子
+                            root = rotateRight(root, x = xp);//将xp带入 然后右旋，
+                            xpp = (xp = x.parent) == null ? null : xp.parent; //重新处理爷爷父亲和儿子的节点关系。
                         }
-                        if (xp != null) {
-                            xp.red = false;
-                            if (xpp != null) {
-                                xpp.red = true;
-                                root = rotateLeft(root, xpp);
+                        if (xp != null) { //XP 不为空
+                            xp.red = false;  //xp为黑色
+                            if (xpp != null) { //如果XPP不为空
+                                xpp.red = true; //XPP 为红色
+                                root = rotateLeft(root, xpp);  //然后根据XPP节点左旋。
                             }
                         }
                     }
