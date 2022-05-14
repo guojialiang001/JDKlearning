@@ -385,6 +385,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     /**
+     * 箱子的数量阈值是转化树形的结构的阈值,而不是转化链表的。
+     * 当添加一个元素到一个箱子中，至少这里面有许多节点，箱子会转化树形（红黑树）
+     * 这个数值必须大于2，并且必须至少达到8以符合移除树木时关于收缩后转换回普通箱子的假设。
+     *
      * The bin count threshold for using a tree rather than list for a
      * bin.  Bins are converted to trees when adding an element to a
      * bin with at least this many nodes. The value must be greater
@@ -395,7 +399,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     static final int TREEIFY_THRESHOLD = 8;
 
     /**
-     * The bin count threshold for untreeifying a (split) bin during a
+     * 这个桶的数量的阈值  非树得转化 一个（分割，） 箱子在 一个重新设置容量的操作。
+     * 应该是小于TREEIFY_THRESHOLD，并且 最多从 6到网眼与收缩检测下删除。
+     *
+     * 红黑树转换为链表的阈值。最多为6
+     *
+     * * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
      */
@@ -522,16 +531,23 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         //”>>>"表示无符号右移，也叫逻辑右移，即若该数为正，则高位补0，而若该数为负数，则右移后高位同样补0。
     }
 
+
+
     /**
+     * 返回X的类，   如果它的形式是“类C实现了Comparable”  否则返回NULL
      * Returns x's Class if it is of the form "class C implements
      * Comparable<C>", else null.
      */
     static Class<?> comparableClassFor(Object x) {
         if (x instanceof Comparable) {
+            //如果是Comparable 实例
             Class<?> c; Type[] ts, as; Type t; ParameterizedType p;
             if ((c = x.getClass()) == String.class) // bypass checks
                 return c;
+                    //如果是字符串，直接返回C
             if ((ts = c.getGenericInterfaces()) != null) {
+                //由此对象表示的类或接口实现的接口不存在
+                //那么循环数组， 获取参数类型和真实类型参数不为空。 参数类型为Comparable 参数只有一个，第一个参数为C那么就可以返回。
                 for (int i = 0; i < ts.length; ++i) {
                     if (((t = ts[i]) instanceof ParameterizedType) &&
                         ((p = (ParameterizedType)t).getRawType() ==
@@ -545,6 +561,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         return null;
     }
 
+    /**
+     * Returns k.compareTo(x) if x matches kc (k's screened comparable
+     * class), else 0.
+     * 返回k.compareTo(x) 如果x链接KC （k的筛选可比较的类）那么返回0
+     */
     /**
      * Returns k.compareTo(x) if x matches kc (k's screened comparable
      * class), else 0.
@@ -704,6 +725,19 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     final float loadFactor;
 
     /* ---------------- Public operations -------------- */
+
+
+    /**
+     *
+     *构造一个空hashmap为指定初始化容量和负载因子。
+     *
+     *
+     * @param  initialCapacity the initial capacity 初始化容量
+     * @param  loadFactor      the load factor  负载因子
+     * @throws IllegalArgumentException if the initial capacity is negative
+     *         or the load factor is nonpositive    如果初始容量是负值或负载系数是非正值
+     */
+
 
     /**
      * Constructs an empty <tt>HashMap</tt> with the specified initial
@@ -927,6 +961,16 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         }
         return null;
     }
+
+
+
+
+    /**
+     * 如果这个MAP 包含一个特殊的kEY 返回true
+     * Returns <tt>true</tt> if this map contains a mapping for the
+     * specified key.
+     *
+     */
 
     /**
      * Returns <tt>true</tt> if this map contains a mapping for the
